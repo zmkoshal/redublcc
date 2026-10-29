@@ -14,6 +14,9 @@ ENV/
 *.sqlite3-journal
 *.db-shm
 *.db-wal
+*.db
+*.sqlite
+*.sqlite3
 
 # Node / Frontend
 node_modules/
@@ -21,12 +24,14 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.tsbuildinfo
 
 # IDE & OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+.kombai/
 
 # Temporary uploads and test output
 backend/uploads/*.pdf
