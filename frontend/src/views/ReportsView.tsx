@@ -205,7 +205,7 @@ export const ReportsView: React.FC = () => {
                 <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-xs text-slate-500 mt-2 font-medium">Generating preview data...</p>
               </div>
-            ) : (!previewData || !previewData.rows || previewData.rows.length === 0) ? (
+            ) : (!previewData || !previewData.rows || !previewData.headers || previewData.rows.length === 0) ? (
               <div className="py-16 text-center text-xs text-slate-500">
                 No data available for the selected statement filter.
               </div>
@@ -215,7 +215,7 @@ export const ReportsView: React.FC = () => {
                   <thead className="bg-[#1F4E79] text-white font-bold text-[11px] uppercase tracking-wider sticky top-0 z-10">
                     <tr>
                       <th className="py-2.5 px-3 w-10 text-center">#</th>
-                      {previewData.headers.map((h: string, idx: number) => (
+                      {(previewData.headers || []).map((h: string, idx: number) => (
                         <th key={idx} className="py-2.5 px-3 whitespace-nowrap">
                           {h}
                         </th>

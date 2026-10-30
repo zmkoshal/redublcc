@@ -721,51 +721,256 @@ class MockBackendService {
   // --- Reports & Excel Export ---
   async getReportsList(): Promise<any[]> {
     return [
-      { id: 'master_statement', name: 'Master Credit Card Statement Report', description: 'Replicates official corporate workbook with subtotals and formulas.' },
-      { id: 'entity_allocations', name: 'Entity Allocation Breakdown', description: 'Expenses grouped by RED, KKOP, PFDC, and Individuals.' },
-      { id: 'fbr_tax_certificate', name: 'FBR S.236Y Withholding Summary', description: 'Withholding income and sales tax certificate breakdown.' }
+      { id: 'ubl_statement', name: '1. Complete UBL Credit Card Statement', description: 'Full formal statement with merchant details, foreign currency, taxes, and allocation subtotals.' },
+      { id: 'transaction_detail', name: '2. Transaction Detail Report', description: 'Chronological listing of all recorded transactions with tax breakdowns and created-by metadata.' },
+      { id: 'company_allocation', name: '3. Company-wise Expense Allocation', description: 'Grouped expense allocation breakdown by corporate entities (RED, KKOP, PFDC, etc.).' },
+      { id: 'merchant_expense', name: '4. Merchant-wise Expense Report', description: 'Spending aggregated by vendor (Midjourney, OpenAI, Google Workspace, Shutterstock, etc.).' },
+      { id: 'advance_tax', name: '5. Advance Tax Report', description: 'FBR Section 236Y advance income withholding tax report for corporate tax compliance.' },
+      { id: 'sales_tax', name: '6. Sales Tax Report', description: 'Provincial sales tax withheld on IT, software subscriptions, and corporate services.' },
+      { id: 'statement_reconciliation', name: '7. Statement Reconciliation Report', description: 'Reconciliation status, bank statement comparison, variances, and sign-off status.' },
+      { id: 'outstanding_payment', name: '8. Outstanding Payment Report', description: 'Payable balances, partial payment history, and overdue status by statement.' },
+      { id: 'monthly_summary', name: '9. Monthly Expense Summary', description: 'Monthly credit card expense trends, total payments, and category allocations.' },
+      { id: 'audit_adjustment', name: '10. Audit and Adjustment Report', description: 'Complete chronological audit trail of all financial modifications and adjustments.' }
     ];
   }
 
   async getReportPreview(reportType: string, statementId?: number): Promise<any> {
-    const stats = await this.getDashboardStats(statementId);
+    let txns = [...this.db.transactions];
+    if (statementId) {
+      txns = txns.filter(t => t.statement_id === statementId);
+    }
+    const catMap = Object.fromEntries(this.db.categories.map(c => [c.id, c]));
+
+    let headers: string[] = [];
+    let rows: any[][] = [];
+
+    switch (reportType) {
+      case 'ubl_statement':
+        headers = ['Date', 'Merchant / Vendor', 'Description', 'Allocation', 'USD ($)', 'Rate', 'PKR (Rs.)', 'Adv Tax', 'Sales Tax', 'Total PKR'];
+        rows = txns.map(t => [
+          t.transaction_date,
+          t.merchant_name,
+          t.description || '',
+          catMap[t.allocation_id || 1]?.name || 'CHARGE TO RED',
+          t.usd_amount || 0,
+          t.exchange_rate || 0,
+          t.pkr_amount,
+          t.advance_tax,
+          t.sales_tax_withheld,
+          t.total_amount
+        ]);
+        break;
+
+      case 'transaction_detail':
+        headers = ['Date', 'Merchant', 'Description', 'Allocation', 'USD', 'Rate', 'PKR', 'Adv Tax', 'Sales Tax', 'Other Taxes', 'Total PKR', 'Status'];
+        rows = txns.map(t => [
+          t.transaction_date,
+          t.merchant_name,
+          t.description || '',
+          catMap[t.allocation_id || 1]?.name || 'CHARGE TO RED',
+          t.usd_amount || 0,
+          t.exchange_rate || 0,
+          t.pkr_amount,
+          t.advance_tax,
+          t.sales_tax_withheld,
+          t.other_taxes || 0,
+          t.total_amount,
+          t.approval_status || 'Approved'
+        ]);
+        break;
+
+      case 'company_allocation': {
+        headers = ['Allocation Category', 'Entity Type', 'Transaction Count', 'Net PKR', 'Advance Tax', 'Sales Tax', 'Total Allocated PKR'];
+        for (const cat of this.db.categories) {
+          const catTxns = txns.filter(t => t.allocation_id === cat.id);
+          if (catTxns.length > 0) {
+            const pkr = catTxns.reduce((s, t) => s + (t.pkr_amount || 0), 0);
+            const adv = catTxns.reduce((s, t) => s + (t.advance_tax || 0), 0);
+            const st = catTxns.reduce((s, t) => s + (t.sales_tax_withheld || 0), 0);
+            const tot = catTxns.reduce((s, t) => s + (t.total_amount || 0), 0);
+            rows.push([cat.name, cat.entity_type, catTxns.length, pkr, adv, st, tot]);
+          }
+        }
+        break;
+      }
+
+      case 'merchant_expense': {
+        headers = ['Merchant / Vendor', 'Transaction Count', 'USD Total', 'PKR Total', 'Taxes & Charges', 'Total Spending'];
+        const mMap: Record<string, { count: number; usd: number; pkr: number; tax: number; total: number }> = {};
+        for (const t of txns) {
+          const m = t.merchant_name;
+          if (!mMap[m]) mMap[m] = { count: 0, usd: 0, pkr: 0, tax: 0, total: 0 };
+          mMap[m].count += 1;
+          mMap[m].usd += (t.usd_amount || 0);
+          mMap[m].pkr += (t.pkr_amount || 0);
+          mMap[m].tax += ((t.advance_tax || 0) + (t.sales_tax_withheld || 0) + (t.other_taxes || 0));
+          mMap[m].total += (t.total_amount || 0);
+        }
+        rows = Object.entries(mMap)
+          .sort((a, b) => b[1].total - a[1].total)
+          .map(([m, d]) => [m, d.count, d.usd, d.pkr, d.tax, d.total]);
+        break;
+      }
+
+      case 'advance_tax':
+        headers = ['Date', 'Merchant', 'Allocation', 'PKR Base', 'Advance Tax (Sec 236Y)', 'Tax % Effective'];
+        rows = txns
+          .filter(t => (t.advance_tax || 0) > 0)
+          .map(t => [
+            t.transaction_date,
+            t.merchant_name,
+            catMap[t.allocation_id || 1]?.name || 'CHARGE TO RED',
+            t.pkr_amount,
+            t.advance_tax,
+            `${t.pkr_amount ? ((t.advance_tax / t.pkr_amount) * 100).toFixed(2) : '0.00'}%`
+          ]);
+        break;
+
+      case 'sales_tax':
+        headers = ['Date', 'Merchant', 'Allocation', 'PKR Base', 'Sales Tax Withheld', 'Additional ST', 'Total ST'];
+        rows = txns
+          .filter(t => (t.sales_tax_withheld || 0) > 0)
+          .map(t => [
+            t.transaction_date,
+            t.merchant_name,
+            catMap[t.allocation_id || 1]?.name || 'CHARGE TO RED',
+            t.pkr_amount,
+            t.sales_tax_withheld,
+            0,
+            t.sales_tax_withheld
+          ]);
+        break;
+
+      case 'statement_reconciliation':
+        headers = ['Statement #', 'Statement Date', 'Bank Total', 'Recorded Total', 'Difference', 'Matched Items', 'Status', 'Sign-off By'];
+        rows = this.db.statements.map(s => [
+          s.statement_number,
+          s.statement_date,
+          s.total_statement_amount,
+          s.total_statement_amount,
+          0,
+          txns.length,
+          'Matched',
+          'Head of Finance'
+        ]);
+        break;
+
+      case 'outstanding_payment':
+        headers = ['Statement #', 'Due Date', 'Total Statement', 'Amount Paid', 'Outstanding Balance', 'Status', 'Days Overdue'];
+        rows = this.db.statements.map(s => [
+          s.statement_number,
+          s.payment_due_date,
+          s.total_statement_amount,
+          s.amount_paid,
+          s.outstanding_balance,
+          s.status,
+          0
+        ]);
+        break;
+
+      case 'monthly_summary':
+        headers = ['Month', 'Statement Count', 'Transaction Count', 'Total Incurred (PKR)', 'Total Taxes (PKR)', 'Total Paid (PKR)'];
+        rows = [
+          ['September 2026', this.db.statements.length, txns.length, 484047.70, 19163.85, 428273.70]
+        ];
+        break;
+
+      case 'audit_adjustment':
+        headers = ['Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 'Details / Notes'];
+        rows = this.db.auditLogs.map(l => [
+          l.timestamp.slice(0, 19).replace('T', ' '),
+          l.user_name,
+          l.action,
+          l.entity_type,
+          l.entity_id || '-',
+          l.notes || ''
+        ]);
+        break;
+
+      default:
+        headers = ['Date', 'Merchant', 'Description', 'PKR', 'Adv Tax', 'Sales Tax', 'Total'];
+        rows = txns.map(t => [t.transaction_date, t.merchant_name, t.description || '', t.pkr_amount, t.advance_tax, t.sales_tax_withheld, t.total_amount]);
+        break;
+    }
+
     return {
-      reportType,
-      statement: await this.getStatement(statementId || 1),
-      summary: stats.kpis,
-      rows: this.db.transactions.slice(0, 10)
+      report_type: reportType,
+      headers,
+      rows,
+      count: rows.length
     };
   }
 
-  async downloadExcelReport(_reportType: string, _statementId?: number): Promise<void> {
-    // Generate CSV export that opens directly in Excel!
-    const headers = ['Date', 'Merchant', 'Description', 'Allocation', 'USD', 'Rate', 'PKR', 'Adv Tax', 'Sales Tax', 'Total PKR'];
-    const rows = this.db.transactions.map(t => [
-      t.transaction_date,
-      `"${t.merchant_name.replace(/"/g, '""')}"`,
-      `"${(t.description || '').replace(/"/g, '""')}"`,
-      t.allocation?.name || '',
-      t.usd_amount || '',
-      t.exchange_rate || '',
-      t.pkr_amount,
-      t.advance_tax,
-      t.sales_tax_withheld,
-      t.total_amount
-    ]);
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+  async downloadExcelReport(reportType: string, statementId?: number): Promise<void> {
+    const data = await this.getReportPreview(reportType, statementId);
+    const headers = data.headers;
+    const rows = data.rows.map((r: any[]) => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`));
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r: string[]) => r.join(','))].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `credit_card_statement_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `report_${reportType}_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
   }
 
-  async downloadPdfReport(_reportType: string, _statementId?: number): Promise<void> {
-    window.print();
+  async downloadPdfReport(reportType: string, statementId?: number): Promise<void> {
+    const data = await this.getReportPreview(reportType, statementId);
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <!doctype html>
+        <html>
+          <head>
+            <title>${reportType} - Red Publicis</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 25px; font-size: 11px; color: #1e293b; }
+              .header { border-bottom: 2px solid #1F4E79; padding-bottom: 12px; margin-bottom: 16px; }
+              h1 { color: #1F4E79; font-size: 18px; margin: 0 0 4px 0; }
+              p { color: #64748b; margin: 0; font-size: 11px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+              th { background: #1F4E79; color: white; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+              td { border-bottom: 1px solid #e2e8f0; padding: 7px 10px; }
+              tr:nth-child(even) { background: #f8fafc; }
+              .num { text-align: right; font-variant-numeric: tabular-nums; }
+              @media print {
+                body { padding: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>RED PUBLICIS (COMMUNICATION ARTS)</h1>
+              <p>Financial Statement Report: <strong>${reportType.replace(/_/g, ' ').toUpperCase()}</strong> | Generated: ${new Date().toLocaleString()}</p>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 30px;">#</th>
+                  ${data.headers.map((h: string) => `<th>${h}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${data.rows.map((r: any[], idx: number) => `
+                  <tr>
+                    <td style="color: #94a3b8;">${idx + 1}</td>
+                    ${r.map((c: any) => `<td class="${typeof c === 'number' ? 'num' : ''}">${typeof c === 'number' ? c.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : c}</td>`).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
   }
 
   // --- Audit Logs ---

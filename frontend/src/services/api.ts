@@ -412,7 +412,7 @@ export const api = {
     );
   },
   getReportPreview: async (reportType: string, statementId?: number) => {
-    const url = statementId ? `${API_BASE}/reports/preview?report_type=${reportType}&statement_id=${statementId}` : `${API_BASE}/reports/preview?report_type=${reportType}`;
+    const url = statementId ? `${API_BASE}/reports/preview/${reportType}&statement_id=${statementId}` : `${API_BASE}/reports/preview/${reportType}`;
     return safeCall(
       () => fetch(url, { headers: getHeaders() }),
       () => mockBackend.getReportPreview(reportType, statementId)
@@ -420,7 +420,7 @@ export const api = {
   },
   downloadExcelReport: async (reportType: string, statementId?: number) => {
     try {
-      const url = statementId ? `${API_BASE}/reports/export/excel?report_type=${reportType}&statement_id=${statementId}` : `${API_BASE}/reports/export/excel?report_type=${reportType}`;
+      const url = statementId ? `${API_BASE}/reports/excel/${reportType}&statement_id=${statementId}` : `${API_BASE}/reports/excel/${reportType}`;
       const res = await fetch(url, { headers: getHeaders() });
       if (res.ok) {
         const blob = await res.blob();
@@ -441,7 +441,7 @@ export const api = {
   },
   downloadPdfReport: async (reportType: string, statementId?: number) => {
     try {
-      const url = statementId ? `${API_BASE}/reports/export/pdf?report_type=${reportType}&statement_id=${statementId}` : `${API_BASE}/reports/export/pdf?report_type=${reportType}`;
+      const url = statementId ? `${API_BASE}/reports/pdf/${reportType}&statement_id=${statementId}` : `${API_BASE}/reports/pdf/${reportType}`;
       const res = await fetch(url, { headers: getHeaders() });
       if (res.ok) {
         const blob = await res.blob();
