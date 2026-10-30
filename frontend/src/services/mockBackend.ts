@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import {
   User,
   CreditCard,
@@ -902,136 +903,1065 @@ class MockBackendService {
   }
 
   async downloadExcelReport(reportType: string, statementId?: number): Promise<void> {
-    const data = await this.getReportPreview(reportType, statementId);
-    const headers: string[] = data.headers || [];
-    const rows: any[][] = data.rows || [];
-
-    const escapeXml = (val: any) => {
-      if (val === null || val === undefined) return '';
-      return String(val)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
+    const thinBorder: Partial<ExcelJS.Borders> = {
+      top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+      left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+      bottom: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+      right: { style: 'thin', color: { argb: 'FFD9D9D9' } }
     };
 
-    const xml = `<?xml version="1.0" encoding="utf-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:html="http://www.w3.org/TR/REC-html40">
- <Styles>
-  <Style ss:ID="Header">
-   <Font ss:Bold="1" ss:Color="#FFFFFF" ss:FontName="Calibri" ss:Size="11"/>
-   <Interior ss:Color="#1F4E79" ss:Pattern="Solid"/>
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
-   </Borders>
-  </Style>
-  <Style ss:ID="Default">
-   <Font ss:FontName="Calibri" ss:Size="11"/>
-   <Alignment ss:Vertical="Center"/>
-  </Style>
-  <Style ss:ID="NumberCell">
-   <Font ss:FontName="Calibri" ss:Size="11"/>
-   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
-   <NumberFormat ss:Format="#,##0.00"/>
-  </Style>
- </Styles>
- <Worksheet ss:Name="${escapeXml(reportType.slice(0, 30))}">
-  <Table>
-   <Row ss:StyleID="Header">
-    <Cell><Data ss:Type="String">#</Data></Cell>
-    ${headers.map((h: string) => `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`).join('')}
-   </Row>
-   ${rows.map((r: any[], idx: number) => `
-   <Row ss:StyleID="Default">
-    <Cell><Data ss:Type="Number">${idx + 1}</Data></Cell>
-    ${r.map((c: any) => {
-      const isNum = typeof c === 'number';
-      return `<Cell ss:StyleID="${isNum ? 'NumberCell' : 'Default'}"><Data ss:Type="${isNum ? 'Number' : 'String'}">${escapeXml(c)}</Data></Cell>`;
-    }).join('')}
-   </Row>`).join('')}
-  </Table>
- </Worksheet>
-</Workbook>`;
+    const doubleBottomBorder: Partial<ExcelJS.Borders> = {
+      top: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+      left: { style: 'thin', color: { argb: 'FFD9D9D9' } },
+      bottom: { style: 'double', color: { argb: 'FF000000' } },
+      right: { style: 'thin', color: { argb: 'FFD9D9D9' } }
+    };
 
-    const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.setAttribute('download', `Report_${reportType}_${new Date().toISOString().slice(0, 10)}.xls`);
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      if (document.body.contains(a)) {
-        document.body.removeChild(a);
+    if (reportType === 'ubl_statement') {
+      const stmt = statementId
+        ? this.db.statements.find(s => s.id === statementId)
+        : this.db.statements[0];
+      const stmtTxns = stmt
+        ? this.db.transactions.filter(t => t.statement_id === stmt.id)
+        : [...this.db.transactions];
+
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'Red Publicis CC System';
+      wb.views = [{ x: 0, y: 0, width: 10000, height: 20000, firstSheet: 0, activeTab: 0, visibility: 'visible' }];
+
+      const ws = wb.addWorksheet('Statement', {
+        pageSetup: {
+          paperSize: 1 as any, // 1 = Letter paper (8.5 in. by 11 in.)
+          orientation: 'landscape',
+          fitToPage: true,
+          fitToWidth: 1,
+          fitToHeight: 0,
+          horizontalCentered: true,
+          margins: {
+            left: 0.4,
+            right: 0.4,
+            top: 0.5,
+            bottom: 0.5,
+            header: 0.3,
+            footer: 0.3
+          },
+          printTitlesRow: '4:4'
+        }
+      });
+
+      ws.views = [{ showGridLines: true }];
+      ws.headerFooter = {
+        oddFooter: '&LRED PUBLICIS — UBL Statement (US Letter 8.5 x 11 in)&RPage &P of &N'
+      };
+
+      // Set column widths matching the original workbook
+      ws.getColumn(1).width = 4;   // A
+      ws.getColumn(2).width = 45;  // B: Party / Merchant Name
+      ws.getColumn(3).width = 16;  // C: Online (USD)
+      ws.getColumn(4).width = 16;  // D: Exchange Rate
+      ws.getColumn(5).width = 18;  // E: Rs. (PKR)
+      ws.getColumn(6).width = 14;  // F: Adv Tax
+      ws.getColumn(7).width = 18;  // G: Sales Tax Withheld
+      ws.getColumn(8).width = 20;  // H: Total Amount
+      ws.getColumn(9).width = 14;  // I: Status
+
+      // Typography & Palette
+      const titleFont: Partial<ExcelJS.Font> = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FF002060' } };
+      const subtitleFont: Partial<ExcelJS.Font> = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF1F4E79' } };
+      const headerFont: Partial<ExcelJS.Font> = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+      const headerFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } };
+      const groupHeaderFont: Partial<ExcelJS.Font> = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF002060' } };
+      const groupHeaderFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+      const subtotalFont: Partial<ExcelJS.Font> = { name: 'Calibri', size: 11, bold: true };
+      const subtotalFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+      const grandTotalFont: Partial<ExcelJS.Font> = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FF000000' } };
+      const grandTotalFill: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC6D9F1' } };
+
+      // Row 1: Statement Title
+      ws.getRow(1).height = 26;
+      const r1 = ws.getCell('B1');
+      r1.value = 'RED PUBLICIS - UBL CREDIT CARD STATEMENT FOR PAYMENT';
+      r1.font = titleFont;
+      r1.alignment = { vertical: 'middle' };
+
+      // Row 2: Statement Dates
+      ws.getRow(2).height = 22;
+      const sDate = stmt?.statement_date || '2026-10-20';
+      const dDate = stmt?.payment_due_date || '2026-11-11';
+      const r2 = ws.getCell('B2');
+      r2.value = `Statement Date: ${sDate}   Payment Due Date: ${dDate}`;
+      r2.font = subtitleFont;
+      r2.alignment = { vertical: 'middle' };
+
+      // Row 3: Blank separator
+      ws.getRow(3).height = 10;
+
+      // Row 4: Column Headers
+      ws.getRow(4).height = 28;
+      const headers = [
+        { col: 'B', text: 'Party / Merchant Name' },
+        { col: 'C', text: 'Online (USD)' },
+        { col: 'D', text: 'Exchange Rate' },
+        { col: 'E', text: 'Rs. (PKR)' },
+        { col: 'F', text: 'Adv Tax' },
+        { col: 'G', text: 'Sales Tax Withheld' },
+        { col: 'H', text: 'Total Amount' },
+        { col: 'I', text: 'Status' }
+      ];
+      for (const h of headers) {
+        const cell = ws.getCell(`${h.col}4`);
+        cell.value = h.text;
+        cell.font = headerFont;
+        cell.fill = headerFill;
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
       }
-      window.URL.revokeObjectURL(url);
-    }, 2500);
+
+      // Try embedding logo in top right (Column H/I)
+      try {
+        const logoRes = await fetch('/logo.png');
+        if (logoRes.ok) {
+          const buffer = await logoRes.arrayBuffer();
+          const imageId = wb.addImage({
+            buffer,
+            extension: 'png'
+          });
+          ws.addImage(imageId, {
+            tl: { col: 7.2, row: 0.2 },
+            ext: { width: 170, height: 34 }
+          });
+        }
+      } catch {
+        // Continue cleanly if logo image cannot be loaded
+      }
+
+      let currentRow = 6;
+      const subtotalRows: number[] = [];
+      const subtotalMap: Record<number, number> = {};
+
+      // Group transactions by category
+      for (const cat of this.db.categories) {
+        const catTxns = stmtTxns.filter(t => t.allocation_id === cat.id);
+        if (catTxns.length === 0) continue;
+
+        // Group Header Row
+        ws.getRow(currentRow).height = 22;
+        const gCell = ws.getCell(`B${currentRow}`);
+        gCell.value = cat.name;
+        gCell.font = groupHeaderFont;
+        gCell.alignment = { vertical: 'middle' };
+        for (let c = 2; c <= 9; c++) {
+          ws.getRow(currentRow).getCell(c).fill = groupHeaderFill;
+        }
+        currentRow++;
+
+        const startItemRow = currentRow;
+        for (const t of catTxns) {
+          ws.getRow(currentRow).height = 20;
+
+          // B: Description or Merchant
+          const cB = ws.getCell(`B${currentRow}`);
+          cB.value = t.description || t.merchant_name;
+          cB.font = { name: 'Calibri', size: 10 };
+          cB.border = thinBorder;
+          cB.alignment = { vertical: 'middle' };
+
+          // C: Online (USD)
+          const cC = ws.getCell(`C${currentRow}`);
+          cC.value = t.usd_amount ? Number(t.usd_amount) : null;
+          cC.numFmt = '#,##0.00';
+          cC.font = { name: 'Calibri', size: 10 };
+          cC.border = thinBorder;
+          cC.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          // D: Exchange Rate
+          const cD = ws.getCell(`D${currentRow}`);
+          if (t.usd_amount) {
+            cD.value = {
+              formula: `E${currentRow}/C${currentRow}`,
+              result: t.exchange_rate ? Number(t.exchange_rate) : undefined
+            };
+          } else {
+            cD.value = t.exchange_rate ? Number(t.exchange_rate) : null;
+          }
+          cD.numFmt = '#,##0.0000';
+          cD.font = { name: 'Calibri', size: 10 };
+          cD.border = thinBorder;
+          cD.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          // E: Rs. (PKR)
+          const cE = ws.getCell(`E${currentRow}`);
+          cE.value = Number(t.pkr_amount || 0);
+          cE.numFmt = '#,##0.00';
+          cE.font = { name: 'Calibri', size: 10 };
+          cE.border = thinBorder;
+          cE.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          // F: Adv Tax
+          const cF = ws.getCell(`F${currentRow}`);
+          cF.value = Number(t.advance_tax || 0);
+          cF.numFmt = '#,##0.00';
+          cF.font = { name: 'Calibri', size: 10 };
+          cF.border = thinBorder;
+          cF.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          // G: Sales Tax Withheld
+          const cG = ws.getCell(`G${currentRow}`);
+          cG.value = Number(t.sales_tax_withheld || 0);
+          cG.numFmt = '#,##0.00';
+          cG.font = { name: 'Calibri', size: 10 };
+          cG.border = thinBorder;
+          cG.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          // H: Total Amount (E + F + G)
+          const cH = ws.getCell(`H${currentRow}`);
+          cH.value = {
+            formula: `SUM(E${currentRow}:G${currentRow})`,
+            result: Number(t.total_amount || 0)
+          };
+          cH.numFmt = '#,##0.00';
+          cH.font = { name: 'Calibri', size: 10, bold: true };
+          cH.border = thinBorder;
+          cH.alignment = { horizontal: 'right', vertical: 'middle' };
+
+          // I: Status
+          const cI = ws.getCell(`I${currentRow}`);
+          cI.value = t.approval_status || 'Approved';
+          cI.font = { name: 'Calibri', size: 10 };
+          cI.border = thinBorder;
+          cI.alignment = { horizontal: 'center', vertical: 'middle' };
+
+          currentRow++;
+        }
+        const endItemRow = currentRow - 1;
+
+        // Subtotal Row
+        ws.getRow(currentRow).height = 22;
+        const subLabel = ws.getCell(`B${currentRow}`);
+        subLabel.value = `SUBTOTAL (${cat.name})`;
+        subLabel.font = subtotalFont;
+        subLabel.alignment = { vertical: 'middle' };
+
+        for (let c = 2; c <= 9; c++) {
+          ws.getRow(currentRow).getCell(c).fill = subtotalFill;
+        }
+
+        const subPkr = ws.getCell(`E${currentRow}`);
+        subPkr.value = { formula: `SUM(E${startItemRow}:E${endItemRow})` };
+        subPkr.numFmt = '#,##0.00';
+        subPkr.font = subtotalFont;
+        subPkr.alignment = { horizontal: 'right', vertical: 'middle' };
+
+        const subAdv = ws.getCell(`F${currentRow}`);
+        subAdv.value = { formula: `SUM(F${startItemRow}:F${endItemRow})` };
+        subAdv.numFmt = '#,##0.00';
+        subAdv.font = subtotalFont;
+        subAdv.alignment = { horizontal: 'right', vertical: 'middle' };
+
+        const subSt = ws.getCell(`G${currentRow}`);
+        subSt.value = { formula: `SUM(G${startItemRow}:G${endItemRow})` };
+        subSt.numFmt = '#,##0.00';
+        subSt.font = subtotalFont;
+        subSt.alignment = { horizontal: 'right', vertical: 'middle' };
+
+        const subTot = ws.getCell(`H${currentRow}`);
+        subTot.value = { formula: `SUM(H${startItemRow}:H${endItemRow})` };
+        subTot.numFmt = '#,##0.00';
+        subTot.font = subtotalFont;
+        subTot.alignment = { horizontal: 'right', vertical: 'middle' };
+
+        subtotalRows.push(currentRow);
+        subtotalMap[cat.id] = currentRow;
+
+        currentRow += 2; // Spacing
+      }
+
+      // Grand Total Row
+      const gtRow = currentRow;
+      ws.getRow(gtRow).height = 24;
+      const gtLabel = ws.getCell(`B${gtRow}`);
+      gtLabel.value = 'GRAND TOTAL';
+      gtLabel.font = grandTotalFont;
+      gtLabel.alignment = { vertical: 'middle' };
+
+      for (let c = 2; c <= 9; c++) {
+        ws.getRow(gtRow).getCell(c).fill = grandTotalFill;
+      }
+
+      const pkrExpr = subtotalRows.length ? `SUM(${subtotalRows.map(r => `E${r}`).join(',')})` : '0';
+      const advExpr = subtotalRows.length ? `SUM(${subtotalRows.map(r => `F${r}`).join(',')})` : '0';
+      const stExpr = subtotalRows.length ? `SUM(${subtotalRows.map(r => `G${r}`).join(',')})` : '0';
+      const totExpr = subtotalRows.length ? `SUM(${subtotalRows.map(r => `H${r}`).join(',')})` : '0';
+
+      const gtCols: Array<[string, string]> = [
+        ['E', pkrExpr],
+        ['F', advExpr],
+        ['G', stExpr],
+        ['H', totExpr]
+      ];
+      for (const [col, expr] of gtCols) {
+        const cell = ws.getCell(`${col}${gtRow}`);
+        cell.value = { formula: expr };
+        cell.numFmt = '#,##0.00';
+        cell.font = grandTotalFont;
+        cell.border = doubleBottomBorder;
+        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+      }
+      currentRow++;
+
+      // Amount Paid Row
+      const pmtRow = currentRow;
+      ws.getRow(pmtRow).height = 20;
+      const pmtLabel = ws.getCell(`B${pmtRow}`);
+      pmtLabel.value = 'AMOUNT PAID';
+      pmtLabel.font = subtotalFont;
+      pmtLabel.alignment = { vertical: 'middle' };
+
+      const pmtCell = ws.getCell(`H${pmtRow}`);
+      pmtCell.value = Number(stmt?.amount_paid || 0);
+      pmtCell.numFmt = '#,##0.00';
+      pmtCell.font = subtotalFont;
+      pmtCell.alignment = { horizontal: 'right', vertical: 'middle' };
+      currentRow++;
+
+      // Outstanding Balance Row
+      const balRow = currentRow;
+      ws.getRow(balRow).height = 22;
+      const balLabel = ws.getCell(`B${balRow}`);
+      balLabel.value = 'OUTSTANDING BALANCE';
+      balLabel.font = grandTotalFont;
+      balLabel.alignment = { vertical: 'middle' };
+
+      const balCell = ws.getCell(`H${balRow}`);
+      balCell.value = { formula: `H${gtRow}-H${pmtRow}` };
+      balCell.numFmt = '#,##0.00';
+      balCell.font = grandTotalFont;
+      balCell.border = doubleBottomBorder;
+      balCell.alignment = { horizontal: 'right', vertical: 'middle' };
+      currentRow += 3;
+
+      // Signatures
+      const sigRow = currentRow;
+      ws.getRow(sigRow).height = 24;
+      ws.getCell(`B${sigRow}`).value = 'IT / Prepared By: ___________________';
+      ws.getCell(`B${sigRow}`).font = { name: 'Calibri', size: 10, bold: true };
+      ws.getCell(`E${sigRow}`).value = 'Admin & HR: ___________________';
+      ws.getCell(`E${sigRow}`).font = { name: 'Calibri', size: 10, bold: true };
+      ws.getCell(`H${sigRow}`).value = 'Head of Finance: ___________________';
+      ws.getCell(`H${sigRow}`).font = { name: 'Calibri', size: 10, bold: true };
+      currentRow += 3;
+
+      // SUMMARY SECTION (Banner Cols C:E, DETAIL Cols C:D, AMOUNT Col E)
+      ws.getRow(currentRow).height = 24;
+      ws.mergeCells(`C${currentRow}:E${currentRow}`);
+      const sumHeader = ws.getCell(`C${currentRow}`);
+      sumHeader.value = 'SUMMARY';
+      sumHeader.font = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
+      sumHeader.alignment = { horizontal: 'center', vertical: 'middle' };
+      for (let c = 3; c <= 5; c++) {
+        ws.getRow(currentRow).getCell(c).fill = headerFill;
+      }
+      currentRow++;
+
+      // Subheaders
+      ws.getRow(currentRow).height = 22;
+      ws.mergeCells(`C${currentRow}:D${currentRow}`);
+      const detHeader = ws.getCell(`C${currentRow}`);
+      detHeader.value = 'DETAIL';
+      detHeader.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF1F4E79' } };
+      detHeader.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      const amtHeader = ws.getCell(`E${currentRow}`);
+      amtHeader.value = 'AMOUNT (PKR)';
+      amtHeader.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF1F4E79' } };
+      amtHeader.alignment = { horizontal: 'right', vertical: 'middle' };
+      currentRow++;
+
+      const summaryStartRow = currentRow;
+      for (const cat of this.db.categories) {
+        ws.getRow(currentRow).height = 20;
+        ws.mergeCells(`C${currentRow}:D${currentRow}`);
+        const catCell = ws.getCell(`C${currentRow}`);
+        catCell.value = cat.name;
+        catCell.font = { name: 'Calibri', size: 10, bold: true };
+        catCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        const amtCell = ws.getCell(`E${currentRow}`);
+        if (subtotalMap[cat.id]) {
+          amtCell.value = { formula: `H${subtotalMap[cat.id]}` };
+        } else {
+          amtCell.value = 0;
+        }
+        amtCell.numFmt = '#,##0.00';
+        amtCell.font = { name: 'Calibri', size: 10, bold: true };
+        amtCell.alignment = { horizontal: 'right', vertical: 'middle' };
+        currentRow++;
+      }
+      const summaryEndRow = currentRow - 1;
+
+      // Summary G.TOTAL
+      ws.getRow(currentRow).height = 22;
+      const gtotLabel = ws.getCell(`D${currentRow}`);
+      gtotLabel.value = 'G.TOTAL';
+      gtotLabel.font = { name: 'Calibri', size: 11, bold: true };
+      gtotLabel.alignment = { horizontal: 'right', vertical: 'middle' };
+
+      const gtotCell = ws.getCell(`E${currentRow}`);
+      if (summaryEndRow >= summaryStartRow) {
+        gtotCell.value = { formula: `SUM(E${summaryStartRow}:E${summaryEndRow})` };
+      } else {
+        gtotCell.value = 0;
+      }
+      gtotCell.numFmt = '#,##0.00';
+      gtotCell.font = { name: 'Calibri', size: 11, bold: true };
+      gtotCell.border = doubleBottomBorder;
+      gtotCell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+      // Write .xlsx buffer
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.setAttribute('download', `UBL_Statement_${stmt?.statement_number || 'UBL-CC-2026-10'}.xlsx`);
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        if (document.body.contains(a)) document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 2500);
+
+    } else {
+      // Standard US Letter Landscape export for other 9 reports
+      const data = await this.getReportPreview(reportType, statementId);
+      const headers: string[] = data.headers || [];
+      const rows: any[][] = data.rows || [];
+
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'Red Publicis CC System';
+      const sheetName = reportType.replace(/_/g, ' ').slice(0, 31);
+      const ws = wb.addWorksheet(sheetName, {
+        pageSetup: {
+          paperSize: 1 as any, // Letter
+          orientation: 'landscape',
+          fitToPage: true,
+          fitToWidth: 1,
+          fitToHeight: 0,
+          margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 }
+        }
+      });
+      ws.views = [{ showGridLines: true }];
+      ws.headerFooter = {
+        oddFooter: `&LRED PUBLICIS — ${reportType.replace(/_/g, ' ').toUpperCase()}&RPage &P of &N`
+      };
+
+      // Header title
+      ws.getRow(1).height = 26;
+      const titleCell = ws.getCell('A1');
+      titleCell.value = `RED PUBLICIS (COMMUNICATION ARTS) — ${reportType.replace(/_/g, ' ').toUpperCase()}`;
+      titleCell.font = { name: 'Calibri', size: 13, bold: true, color: { argb: 'FF002060' } };
+
+      // Subtitle
+      ws.getRow(2).height = 18;
+      const subCell = ws.getCell('A2');
+      subCell.value = `Generated: ${new Date().toLocaleString()} | Paper: US Letter (8.5 x 11 in) Landscape`;
+      subCell.font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF595959' } };
+
+      // Table headers at row 4
+      ws.getRow(4).height = 26;
+      const allHeaders = ['#', ...headers];
+      allHeaders.forEach((h, idx) => {
+        const colNum = idx + 1;
+        const cell = ws.getRow(4).getCell(colNum);
+        cell.value = h;
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } };
+        cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      });
+
+      // Rows
+      rows.forEach((r, rowIdx) => {
+        const rowNum = rowIdx + 5;
+        const row = ws.getRow(rowNum);
+        row.height = 20;
+
+        const numCell = row.getCell(1);
+        numCell.value = rowIdx + 1;
+        numCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        numCell.font = { name: 'Calibri', size: 10, color: { argb: 'FF595959' } };
+        numCell.border = thinBorder;
+        if (rowIdx % 2 === 1) numCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+
+        r.forEach((c, colIdx) => {
+          const cell = row.getCell(colIdx + 2);
+          const isNum = typeof c === 'number';
+          cell.value = c;
+          cell.font = { name: 'Calibri', size: 10 };
+          cell.border = thinBorder;
+          if (rowIdx % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+          if (isNum) {
+            cell.numFmt = '#,##0.00';
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          } else {
+            cell.alignment = { vertical: 'middle' };
+          }
+        });
+      });
+
+      // Auto column widths
+      ws.columns.forEach((col, idx) => {
+        if (idx === 0) {
+          col.width = 6;
+        } else {
+          const headerLength = allHeaders[idx]?.length || 10;
+          col.width = Math.max(14, headerLength + 4);
+        }
+      });
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.setAttribute('download', `Report_${reportType}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        if (document.body.contains(a)) document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 2500);
+    }
   }
 
   async downloadPdfReport(reportType: string, statementId?: number): Promise<void> {
-    const data = await this.getReportPreview(reportType, statementId);
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      window.print();
-      return;
+    const fmt = (n: number | null | undefined, digits: number = 2) => {
+      if (n === null || n === undefined) return '-';
+      return Number(n).toLocaleString('en-PK', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+      });
+    };
+
+    let html = '';
+
+    if (reportType === 'ubl_statement') {
+      const stmt = statementId
+        ? this.db.statements.find(s => s.id === statementId)
+        : this.db.statements[0];
+      const stmtTxns = stmt
+        ? this.db.transactions.filter(t => t.statement_id === stmt.id)
+        : [...this.db.transactions];
+
+      const catGroups: Array<{
+        cat: AllocationCategory;
+        txns: Transaction[];
+        pkr: number;
+        adv: number;
+        st: number;
+        total: number;
+      }> = [];
+
+      for (const cat of this.db.categories) {
+        const catTxns = stmtTxns.filter(t => t.allocation_id === cat.id);
+        if (catTxns.length === 0) continue;
+        const pkr = catTxns.reduce((s, t) => s + Number(t.pkr_amount || 0), 0);
+        const adv = catTxns.reduce((s, t) => s + Number(t.advance_tax || 0), 0);
+        const st = catTxns.reduce((s, t) => s + Number(t.sales_tax_withheld || 0), 0);
+        const total = catTxns.reduce((s, t) => s + Number(t.total_amount || 0), 0);
+        catGroups.push({ cat, txns: catTxns, pkr, adv, st, total });
+      }
+
+      const grandPkr = catGroups.reduce((s, g) => s + g.pkr, 0);
+      const grandAdv = catGroups.reduce((s, g) => s + g.adv, 0);
+      const grandSt = catGroups.reduce((s, g) => s + g.st, 0);
+      const grandTotal = catGroups.reduce((s, g) => s + g.total, 0);
+      const amountPaid = Number(stmt?.amount_paid || 0);
+      const balanceDue = grandTotal - amountPaid;
+      const sDate = stmt?.statement_date || '2026-10-20';
+      const dDate = stmt?.payment_due_date || '2026-11-11';
+
+      html = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>UBL Credit Card Statement - Red Publicis</title>
+  <style>
+    @page {
+      size: letter landscape;
+      margin: 0.35in 0.45in;
     }
-    printWindow.document.write(`
-      <!doctype html>
-      <html>
-        <head>
-          <title>${reportType} - Red Publicis</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 25px; font-size: 11px; color: #1e293b; }
-            .header { border-bottom: 2px solid #1F4E79; padding-bottom: 12px; margin-bottom: 16px; }
-            h1 { color: #1F4E79; font-size: 18px; margin: 0 0 4px 0; }
-            p { color: #64748b; margin: 0; font-size: 11px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-            th { background: #1F4E79; color: white; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-            td { border-bottom: 1px solid #e2e8f0; padding: 7px 10px; }
-            tr:nth-child(even) { background: #f8fafc; }
-            .num { text-align: right; font-variant-numeric: tabular-nums; }
-            @media print {
-              body { padding: 0; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>RED PUBLICIS (COMMUNICATION ARTS)</h1>
-            <p>Financial Statement Report: <strong>${reportType.replace(/_/g, ' ').toUpperCase()}</strong> | Generated: ${new Date().toLocaleString()}</p>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 30px;">#</th>
-                ${data.headers.map((h: string) => `<th>${h}</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${data.rows.map((r: any[], idx: number) => `
-                <tr>
-                  <td style="color: #94a3b8;">${idx + 1}</td>
-                  ${r.map((c: any) => `<td class="${typeof c === 'number' ? 'num' : ''}">${typeof c === 'number' ? c.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : c}</td>`).join('')}
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
+    @media print {
+      .no-print { display: none !important; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
+      .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+    }
+    body {
+      font-family: Calibri, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color: #0f172a;
+      background: white;
+      margin: 0;
+      padding: 16px 20px;
+      font-size: 10.5px;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 14px;
+      margin-bottom: 14px;
+    }
+    .toolbar-title { font-weight: 700; font-size: 12px; color: #1e293b; }
+    .btn-print {
+      background: #1F4E79;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-weight: 700;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .btn-close {
+      background: #e2e8f0;
+      color: #334155;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-weight: 600;
+      font-size: 11px;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #1F4E79;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+    .main-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #002060;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.2px;
+    }
+    .meta-subtitle {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1F4E79;
+      margin: 0;
+    }
+    .meta-card {
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .logo-img {
+      height: 36px;
+      object-fit: contain;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+      font-size: 10px;
+    }
+    table.data-table th {
+      background: #1F4E79;
+      color: #ffffff;
+      padding: 6px 8px;
+      font-weight: 700;
+      text-align: center;
+      border: 1px solid #1F4E79;
+    }
+    table.data-table td {
+      padding: 4px 8px;
+      border: 1px solid #d9d9d9;
+      vertical-align: middle;
+    }
+    .cat-head {
+      background: #D9E1F2 !important;
+      color: #002060;
+      font-weight: 700;
+      font-size: 10.5px;
+      padding: 5px 8px;
+      border: 1px solid #bfdbfe !important;
+      text-align: left;
+    }
+    .subtotal-row {
+      background: #F2F2F2 !important;
+      font-weight: 700;
+    }
+    .grand-total-row {
+      background: #C6D9F1 !important;
+      font-weight: 800;
+      font-size: 11px;
+      border-bottom: 3px double #000000 !important;
+    }
+    .paid-row {
+      background: #ffffff;
+      font-weight: 700;
+    }
+    .bal-row {
+      background: #e2e8f0;
+      font-weight: 800;
+      font-size: 11px;
+      border-bottom: 3px double #000000 !important;
+    }
+    .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .center { text-align: center; }
+    .signatures-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 22px;
+      margin-bottom: 22px;
+      padding: 0 10px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #000000;
+    }
+    .summary-section {
+      width: 420px;
+      margin-top: 10px;
+      border: 1px solid #1F4E79;
+      border-collapse: collapse;
+      font-size: 10.5px;
+    }
+    .summary-section th.banner {
+      background: #1F4E79;
+      color: white;
+      text-align: center;
+      padding: 6px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .summary-section th.sub {
+      background: #f8fafc;
+      color: #1F4E79;
+      padding: 5px 8px;
+      font-weight: 700;
+      border-bottom: 1px solid #cbd5e1;
+    }
+    .summary-section td {
+      padding: 4px 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .summary-section tr.gtot td {
+      font-weight: 800;
+      border-top: 1px solid #000000;
+      border-bottom: 3px double #000000;
+    }
+    .footer-note {
+      margin-top: 14px;
+      font-size: 9px;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar no-print">
+    <div class="toolbar-title">📄 UBL Credit Card Statement — US Letter Landscape View</div>
+    <div>
+      <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF (Letter Landscape)</button>
+      <button class="btn-close" onclick="window.close()">✕ Close</button>
+    </div>
+  </div>
+
+  <div class="header-bar">
+    <div>
+      <h1 class="main-title">RED PUBLICIS - UBL CREDIT CARD STATEMENT FOR PAYMENT</h1>
+      <p class="meta-subtitle">Statement Date: ${sDate} &nbsp;&nbsp;|&nbsp;&nbsp; Payment Due Date: ${dDate}</p>
+      <div class="meta-card">Card: UBL Corporate Credit Card &bull; Account: ${this.db.card?.card_number_last4 ? `**** **** **** ${this.db.card.card_number_last4}` : '4123-XXXX-XXXX-8901'} &bull; Statement #${stmt?.statement_number || 'UBL-CC-2026-10'}</div>
+    </div>
+    <div>
+      <img src="/logo.png" class="logo-img" alt="Red Publicis Logo" onerror="this.style.display='none'" />
+    </div>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 28%; text-align: left;">Party / Merchant Name</th>
+        <th style="width: 10%;">Online (USD)</th>
+        <th style="width: 10%;">Exchange Rate</th>
+        <th style="width: 12%;">Rs. (PKR)</th>
+        <th style="width: 10%;">Adv Tax</th>
+        <th style="width: 11%;">Sales Tax Withheld</th>
+        <th style="width: 12%;">Total Amount</th>
+        <th style="width: 7%;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${catGroups.map(g => `
+        <tr>
+          <td colspan="8" class="cat-head">${g.cat.name}</td>
+        </tr>
+        ${g.txns.map(t => `
+          <tr>
+            <td>${t.description || t.merchant_name}</td>
+            <td class="num">${t.usd_amount ? `$${fmt(t.usd_amount)}` : '-'}</td>
+            <td class="num">${t.exchange_rate ? fmt(t.exchange_rate, 4) : '-'}</td>
+            <td class="num">${fmt(t.pkr_amount)}</td>
+            <td class="num">${fmt(t.advance_tax)}</td>
+            <td class="num">${fmt(t.sales_tax_withheld)}</td>
+            <td class="num" style="font-weight: 700;">${fmt(t.total_amount)}</td>
+            <td class="center">${t.approval_status || 'Approved'}</td>
+          </tr>
+        `).join('')}
+        <tr class="subtotal-row">
+          <td style="font-weight: 700;">SUBTOTAL (${g.cat.name})</td>
+          <td class="num">-</td>
+          <td class="num">-</td>
+          <td class="num">${fmt(g.pkr)}</td>
+          <td class="num">${fmt(g.adv)}</td>
+          <td class="num">${fmt(g.st)}</td>
+          <td class="num">${fmt(g.total)}</td>
+          <td class="center">-</td>
+        </tr>
+        <tr><td colspan="8" style="height: 6px; background: transparent; border: none;"></td></tr>
+      `).join('')}
+
+      <tr class="grand-total-row avoid-break">
+        <td style="font-weight: 800;">GRAND TOTAL</td>
+        <td class="num">-</td>
+        <td class="num">-</td>
+        <td class="num">${fmt(grandPkr)}</td>
+        <td class="num">${fmt(grandAdv)}</td>
+        <td class="num">${fmt(grandSt)}</td>
+        <td class="num" style="font-size: 11.5px;">${fmt(grandTotal)}</td>
+        <td class="center">-</td>
+      </tr>
+
+      <tr class="paid-row avoid-break">
+        <td style="font-weight: 700;">AMOUNT PAID</td>
+        <td colspan="5"></td>
+        <td class="num" style="font-weight: 700;">${fmt(amountPaid)}</td>
+        <td></td>
+      </tr>
+
+      <tr class="bal-row avoid-break">
+        <td style="font-weight: 800;">OUTSTANDING BALANCE</td>
+        <td colspan="5"></td>
+        <td class="num" style="font-weight: 800; font-size: 11.5px;">${fmt(balanceDue)}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="signatures-row avoid-break">
+    <div>IT / Prepared By: ___________________________</div>
+    <div>Admin & HR: ___________________________</div>
+    <div>Head of Finance: ___________________________</div>
+  </div>
+
+  <div class="avoid-break" style="margin-top: 15px;">
+    <table class="summary-section">
+      <thead>
+        <tr>
+          <th colspan="2" class="banner">SUMMARY</th>
+        </tr>
+        <tr>
+          <th class="sub" style="text-align: left;">DETAIL</th>
+          <th class="sub" style="text-align: right; width: 140px;">AMOUNT (PKR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${this.db.categories.map(c => {
+          const group = catGroups.find(g => g.cat.id === c.id);
+          const amt = group ? group.total : 0;
+          return `
+            <tr>
+              <td style="font-weight: 700;">${c.name}</td>
+              <td class="num" style="font-weight: 700;">${fmt(amt)}</td>
+            </tr>
+          `;
+        }).join('')}
+        <tr class="gtot">
+          <td style="text-align: right; font-weight: 800;">G.TOTAL</td>
+          <td class="num" style="font-weight: 800;">${fmt(grandTotal)}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer-note no-print">
+    <span>RED PUBLICIS — Official UBL Credit Card Financial Statement</span>
+    <span>Paper Form Factor: US Letter Landscape (8.5 &times; 11 inches)</span>
+  </div>
+
+  <script>
+    setTimeout(function() {
+      window.print();
     }, 600);
+  </script>
+</body>
+</html>`;
+    } else {
+      // Standard US Letter Landscape report for other 9 types
+      const data = await this.getReportPreview(reportType, statementId);
+      const headers: string[] = data.headers || [];
+      const rows: any[][] = data.rows || [];
+
+      html = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${reportType} - Red Publicis</title>
+  <style>
+    @page {
+      size: letter landscape;
+      margin: 0.35in 0.45in;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; }
+    }
+    body {
+      font-family: Calibri, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      padding: 18px 22px;
+      font-size: 11px;
+      color: #0f172a;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 14px;
+      margin-bottom: 14px;
+    }
+    .btn-print {
+      background: #1F4E79;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-weight: 700;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .header {
+      border-bottom: 2px solid #1F4E79;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 { color: #002060; font-size: 17px; margin: 0 0 4px 0; }
+    p { color: #1F4E79; margin: 0; font-size: 11px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th {
+      background: #1F4E79;
+      color: white;
+      padding: 7px 9px;
+      text-align: left;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border: 1px solid #1F4E79;
+    }
+    td {
+      border: 1px solid #e2e8f0;
+      padding: 6px 9px;
+    }
+    tr:nth-child(even) { background: #f8fafc; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .center { text-align: center; }
+    .signatures {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar no-print">
+    <div style="font-weight: 700; font-size: 12px;">📄 ${reportType.replace(/_/g, ' ').toUpperCase()} — US Letter Landscape</div>
+    <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+  <div class="header">
+    <div>
+      <h1>RED PUBLICIS (COMMUNICATION ARTS)</h1>
+      <p>Report: <strong>${reportType.replace(/_/g, ' ').toUpperCase()}</strong> &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>
+    </div>
+    <img src="/logo.png" style="height: 36px; object-fit: contain;" alt="Logo" onerror="this.style.display='none'" />
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 35px; text-align: center;">#</th>
+        ${headers.map((h: string) => `<th>${h}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.map((r: any[], idx: number) => `
+        <tr>
+          <td class="center" style="color: #64748b;">${idx + 1}</td>
+          ${r.map((c: any) => `<td class="${typeof c === 'number' ? 'num' : ''}">${typeof c === 'number' ? fmt(c) : (c || '-')}</td>`).join('')}
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+  <div class="signatures">
+    <div>Prepared By: ___________________________</div>
+    <div>Verified By: ___________________________</div>
+    <div>Approved By: ___________________________</div>
+  </div>
+  <script>
+    setTimeout(function() { window.print(); }, 600);
+  </script>
+</body>
+</html>`;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+    } else {
+      // Fallback if popup is blocked: use hidden iframe to trigger print dialog
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+      iframe.contentDocument?.open();
+      iframe.contentDocument?.write(html);
+      iframe.contentDocument?.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          if (document.body.contains(iframe)) document.body.removeChild(iframe);
+        }, 60000);
+      }, 600);
+    }
   }
 
   // --- Audit Logs ---
