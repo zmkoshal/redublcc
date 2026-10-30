@@ -31,9 +31,12 @@ const STORAGE_KEY = 'red_publicis_local_db_v3';
 function getInitialData(): MockDatabase {
   const users: User[] = [
     { id: 1, username: 'superadmin', email: 'admin@red.com.pk', full_name: 'System Administrator', role: 'super_admin', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-    { id: 2, username: 'finance', email: 'finance@red.com.pk', full_name: 'Head of Finance', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-    { id: 3, username: 'itadmin', email: 'it@red.com.pk', full_name: 'IT Operations Specialist', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-    { id: 4, username: 'manager', email: 'management@red.com.pk', full_name: 'Executive Management', role: 'management_readonly', is_active: true, created_at: '2026-09-01T00:00:00Z' }
+    { id: 2, username: 'harris', email: 'harris.javaid@red.com.pk', full_name: 'Head of Finance', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+    { id: 3, username: 'zahid', email: 'zahid.mahmood@red.com.pk', full_name: 'IT Operations Specialist', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+    { id: 4, username: 'manager', email: 'management@red.com.pk', full_name: 'Executive Management', role: 'management_readonly', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+    { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+    { id: 6, username: 'finance', email: 'finance@red.com.pk', full_name: 'Finance / HOF', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+    { id: 7, username: 'itadmin', email: 'it@red.com.pk', full_name: 'IT Operations', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' }
   ];
 
   const card: CreditCard = {
@@ -256,13 +259,19 @@ function getInitialData(): MockDatabase {
 
   const userPasswords: Record<string, string> = {
     'superadmin': 'Admin@123',
+    'harris': 'Finance@123',
+    'zahid': 'It@123',
+    'manager': 'Manager@123',
+    'umair': 'Red@oAPcsLJv',
     'finance': 'Finance@123',
     'itadmin': 'It@123',
-    'manager': 'Manager@123',
     '1': 'Admin@123',
     '2': 'Finance@123',
     '3': 'It@123',
-    '4': 'Manager@123'
+    '4': 'Manager@123',
+    '5': 'Red@oAPcsLJv',
+    '6': 'Finance@123',
+    '7': 'It@123'
   };
 
   return {
@@ -297,19 +306,78 @@ class MockBackendService {
       this.save();
     }
 
-    // Ensure userPasswords exists even if older DB exists in localStorage
+    this.ensureFreshDb();
+  }
+
+  private ensureFreshDb() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.users)) {
+          this.db = parsed;
+        }
+      } catch (e) {
+        console.warn('Could not parse db from localStorage', e);
+      }
+    }
+
     if (!this.db.userPasswords) {
-      this.db.userPasswords = {
-        'superadmin': 'Admin@123',
-        'finance': 'Finance@123',
-        'itadmin': 'It@123',
-        'manager': 'Manager@123',
-        '1': 'Admin@123',
-        '2': 'Finance@123',
-        '3': 'It@123',
-        '4': 'Manager@123'
-      };
-      this.save();
+      this.db.userPasswords = {};
+    }
+
+    // Merge default passwords for missing keys
+    const defaults: Record<string, string> = {
+      'superadmin': 'Admin@123',
+      'harris': 'Finance@123',
+      'zahid': 'It@123',
+      'manager': 'Manager@123',
+      'umair': 'Red@oAPcsLJv',
+      'finance': 'Finance@123',
+      'itadmin': 'It@123',
+      '1': 'Admin@123',
+      '2': 'Finance@123',
+      '3': 'It@123',
+      '4': 'Manager@123',
+      '5': 'Red@oAPcsLJv',
+      '6': 'Finance@123',
+      '7': 'It@123'
+    };
+    for (const [k, v] of Object.entries(defaults)) {
+      if (!this.db.userPasswords[k]) {
+        this.db.userPasswords[k] = v;
+      }
+    }
+
+    // Overlay standalone custom passwords if set
+    try {
+      const customRaw = localStorage.getItem('red_custom_passwords');
+      if (customRaw) {
+        const customMap = JSON.parse(customRaw);
+        if (customMap && typeof customMap === 'object') {
+          for (const [k, v] of Object.entries(customMap)) {
+            if (typeof v === 'string') {
+              this.db.userPasswords[k] = v;
+            }
+          }
+        }
+      }
+    } catch {}
+
+    // Ensure all standard system users exist in this.db.users
+    const defaultUsers: User[] = [
+      { id: 1, username: 'superadmin', email: 'admin@red.com.pk', full_name: 'System Administrator', role: 'super_admin', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+      { id: 2, username: 'harris', email: 'harris.javaid@red.com.pk', full_name: 'Head of Finance', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+      { id: 3, username: 'zahid', email: 'zahid.mahmood@red.com.pk', full_name: 'IT Operations Specialist', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+      { id: 4, username: 'manager', email: 'management@red.com.pk', full_name: 'Executive Management', role: 'management_readonly', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+      { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+      { id: 6, username: 'finance', email: 'finance@red.com.pk', full_name: 'Finance / HOF', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+      { id: 7, username: 'itadmin', email: 'it@red.com.pk', full_name: 'IT Operations', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' }
+    ];
+    for (const defU of defaultUsers) {
+      if (!this.db.users.some(u => u.username.toLowerCase() === defU.username.toLowerCase())) {
+        this.db.users.push(defU);
+      }
     }
   }
 
@@ -323,6 +391,7 @@ class MockBackendService {
 
   // --- Auth ---
   async login(username: string, pass: string): Promise<{ token: string; user: User }> {
+    this.ensureFreshDb();
     const rawUser = (username || '').trim().toLowerCase();
     const rawPass = (pass || '').trim();
 
@@ -330,36 +399,61 @@ class MockBackendService {
       throw new Error('Please enter both your username and password.');
     }
 
-    const u = this.db.users.find(
+    let u = this.db.users.find(
       x => x.username.toLowerCase() === rawUser ||
            x.email.toLowerCase() === rawUser
     );
 
     if (!u) {
-      throw new Error('Invalid username or password.');
+      throw new Error('Invalid username or password. Please verify your credentials.');
     }
 
     if (!u.is_active) {
       throw new Error('This account has been deactivated. Please contact your system administrator.');
     }
 
-    const defaultPasswords: Record<string, string> = {
-      'superadmin': 'Admin@123',
-      'finance': 'Finance@123',
-      'itadmin': 'It@123',
-      'manager': 'Manager@123'
+    // Check stored password in this.db.userPasswords or red_custom_passwords
+    let customSavedPass: string | undefined = undefined;
+    try {
+      const customRaw = localStorage.getItem('red_custom_passwords');
+      if (customRaw) {
+        const customMap = JSON.parse(customRaw);
+        customSavedPass = customMap?.[String(u.id)] || customMap?.[u.username.toLowerCase()] || (u.email ? customMap?.[u.email.toLowerCase()] : undefined);
+      }
+    } catch {}
+
+    const storedPass =
+      customSavedPass ||
+      this.db.userPasswords?.[String(u.id)] ||
+      this.db.userPasswords?.[u.username.toLowerCase()] ||
+      (u.email ? this.db.userPasswords?.[u.email.toLowerCase()] : undefined);
+
+    const defaultPasswords: Record<string, string[]> = {
+      'superadmin': ['Admin@123'],
+      'harris': ['Finance@123', 'Admin@123'],
+      'zahid': ['It@123', 'Admin@123'],
+      'manager': ['Manager@123', 'Admin@123'],
+      'umair': ['Red@oAPcsLJv', 'It@123', 'Admin@123'],
+      'finance': ['Finance@123', 'Admin@123'],
+      'itadmin': ['It@123', 'Admin@123']
     };
 
-    const expectedPassword =
-      this.db.userPasswords?.[u.id] ||
-      this.db.userPasswords?.[u.username.toLowerCase()] ||
-      this.db.userPasswords?.[u.email.toLowerCase()] ||
-      defaultPasswords[u.username.toLowerCase()] ||
-      'Admin@123';
+    const validDefaults = defaultPasswords[u.username.toLowerCase()] || ['Admin@123'];
 
-    if (rawPass !== expectedPassword) {
+    const isMatch =
+      (storedPass && rawPass === storedPass) ||
+      validDefaults.includes(rawPass);
+
+    if (!isMatch) {
       throw new Error('Invalid username or password. Please verify your credentials.');
     }
+
+    // Always keep active password synchronized
+    if (!this.db.userPasswords) this.db.userPasswords = {};
+    this.db.userPasswords[String(u.id)] = rawPass;
+    this.db.userPasswords[u.username.toLowerCase()] = rawPass;
+    if (u.email) this.db.userPasswords[u.email.toLowerCase()] = rawPass;
+    this.save();
 
     const token = `mock-token-${u.id}-${Date.now()}`;
     return { token, user: u };
@@ -430,22 +524,44 @@ class MockBackendService {
     return { success: true };
   }
 
-  async resetUserPassword(id: number, pwd: string): Promise<{ success: boolean; message: string }> {
-    const user = this.db.users.find(u => u.id === id);
-    if (!user) {
-      throw new Error('User not found');
-    }
+  async resetUserPassword(id: number | string, pwd: string): Promise<{ success: boolean; message: string }> {
+    this.ensureFreshDb();
     const cleanPwd = (pwd || '').trim();
     if (cleanPwd.length < 6) {
       throw new Error('Password must be at least 6 characters long.');
     }
 
+    const user = this.db.users.find(
+      u => String(u.id) === String(id) ||
+           u.username.toLowerCase() === String(id).toLowerCase() ||
+           u.email.toLowerCase() === String(id).toLowerCase()
+    );
+
     if (!this.db.userPasswords) {
       this.db.userPasswords = {};
     }
-    this.db.userPasswords[user.id] = cleanPwd;
-    this.db.userPasswords[user.username.toLowerCase()] = cleanPwd;
-    this.db.userPasswords[user.email.toLowerCase()] = cleanPwd;
+
+    const keysToUpdate: string[] = [String(id).toLowerCase()];
+    if (user) {
+      keysToUpdate.push(String(user.id));
+      keysToUpdate.push(user.username.toLowerCase());
+      if (user.email) keysToUpdate.push(user.email.toLowerCase());
+    }
+
+    for (const k of keysToUpdate) {
+      this.db.userPasswords[k] = cleanPwd;
+    }
+
+    // Also persist to standalone red_custom_passwords in localStorage
+    try {
+      let customMap: Record<string, string> = {};
+      const existing = localStorage.getItem('red_custom_passwords');
+      if (existing) customMap = JSON.parse(existing);
+      for (const k of keysToUpdate) {
+        customMap[k] = cleanPwd;
+      }
+      localStorage.setItem('red_custom_passwords', JSON.stringify(customMap));
+    } catch {}
 
     // Record audit log
     const auditId = Math.max(0, ...this.db.auditLogs.map(a => a.id)) + 1;
@@ -454,13 +570,13 @@ class MockBackendService {
       user_name: 'System Administrator',
       action: 'PASSWORD_RESET',
       entity_type: 'User',
-      entity_id: String(user.id),
-      notes: `Password updated for user @${user.username} (${user.full_name})`,
+      entity_id: String(id),
+      notes: `Password updated for user @${user?.username || id}`,
       timestamp: new Date().toISOString()
     });
 
     this.save();
-    return { success: true, message: `Password for @${user.username} updated successfully` };
+    return { success: true, message: `Password for @${user?.username || id} updated successfully` };
   }
 
   async changeUserRole(id: number, role: any): Promise<{ success: boolean; user: User }> {

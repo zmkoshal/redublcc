@@ -17,18 +17,15 @@ function getHeaders(isJson = true): HeadersInit {
 async function safeCall<T>(remoteCall: () => Promise<Response>, fallback: () => Promise<T>): Promise<T> {
   try {
     const res = await remoteCall();
-    if (!res.ok) {
-      // Static hosts like GitHub Pages return 404 or 405 for POST / unsupported routes
-      if (res.status === 404 || res.status === 405 || res.status === 502 || res.status === 503) {
-        return await fallback();
-      }
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || `Request failed with status ${res.status}`);
+    const contentType = res.headers.get('content-type') || '';
+    if (!res.ok || !contentType.includes('application/json')) {
+      // If HTTP error or response is not JSON (e.g. static host 404/405 or HTML SPA fallback), use in-browser backend!
+      return await fallback();
     }
     return await res.json();
   } catch (err: any) {
-    // If it's an explicit API business error, re-throw it
-    if (err.message && !err.message.includes('failed with status') && !err.message.includes('fetch') && !err.message.includes('NetworkError')) {
+    // If explicit server business error was parsed, re-throw it only if it's from a live backend API
+    if (err.message && !err.message.includes('failed with status') && !err.message.includes('fetch') && !err.message.includes('NetworkError') && !err.message.includes('Unexpected token')) {
       throw err;
     }
     // Network or server unreachable: transparently fall back to in-browser storage!
