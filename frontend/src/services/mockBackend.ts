@@ -25,7 +25,7 @@ interface MockDatabase {
   settings: Record<string, string>;
 }
 
-const STORAGE_KEY = 'red_publicis_local_db_v1';
+const STORAGE_KEY = 'red_publicis_local_db_v3';
 
 function getInitialData(): MockDatabase {
   const users: User[] = [
@@ -80,7 +80,32 @@ function getInitialData(): MockDatabase {
     { dt: '2026-09-20', m: 'Google Drive Storage', desc: 'Google Drive (Data Upload for Client 2TB)', c: 'RED', usd: 0, rate: 0, pkr: 6499.00, adv: 0.0, st: 0.0, oth: 0.0, tot: 6499.00 }
   ];
 
-  const transactions: Transaction[] = rawTx.map((t, idx) => ({
+  const rawTx2 = [
+    { dt: '2026-08-20', m: 'SHUTTERSTOCK', desc: 'SHUTTERSTOCK', c: 'RED', usd: 0, rate: 0, pkr: 58248.20, adv: 279.00, st: 0.00, tot: 58527.20 },
+    { dt: '2026-08-22', m: 'MAGNIFIC', desc: 'MAGNIFIC', c: 'RED', usd: 0, rate: 0, pkr: 10350.00, adv: 0.00, st: 0.00, tot: 10350.00 },
+    { dt: '2026-08-22', m: 'OPENAI-CHATGPT', desc: 'OPENAI-CHATGPT', c: 'RED', usd: 0, rate: 0, pkr: 27999.00, adv: 0.00, st: 0.00, tot: 27999.00 },
+    { dt: '2026-08-24', m: 'NETFLIX', desc: 'NETFLIX', c: 'SYED_HAMMAD', usd: 0, rate: 0, pkr: 1100.00, adv: 55.00, st: 0.00, tot: 1155.00 },
+    { dt: '2026-08-24', m: 'Google', desc: 'Google', c: 'RED', usd: 0, rate: 0, pkr: 6499.00, adv: 324.95, st: 0.00, tot: 6823.95 },
+    { dt: '2026-08-30', m: 'Anthropic', desc: 'Anthropic', c: 'RED', usd: 0, rate: 0, pkr: 5852.00, adv: 28.00, st: 0.00, tot: 5880.00 },
+    { dt: '2026-08-31', m: 'Shopify', desc: 'Shopify', c: 'KKOP', usd: 0, rate: 0, pkr: 7315.00, adv: 35.00, st: 0.00, tot: 7350.00 },
+    { dt: '2026-08-31', m: 'Godaddy', desc: 'Godaddy', c: 'KKOP', usd: 0, rate: 0, pkr: 108320.00, adv: 0.00, st: 5416.00, tot: 113736.00 },
+    { dt: '2026-10-01', m: 'Google red.com.pk', desc: 'Google red.com.pk', c: 'RED', usd: 0, rate: 0, pkr: 204820.00, adv: 980.00, st: 9716.93, tot: 215516.93 },
+    { dt: '2026-10-01', m: 'Magnific', desc: 'Magnific', c: 'RED', usd: 0, rate: 0, pkr: 10350.00, adv: 0.00, st: 0.00, tot: 10350.00 },
+    { dt: '2026-10-01', m: 'Google PFDC', desc: 'Google PFDC', c: 'PFDC', usd: 0, rate: 0, pkr: 14744.41, adv: 71.00, st: 699.61, tot: 15515.02 },
+    { dt: '2026-10-02', m: 'Cantabo', desc: 'Cantabo', c: 'RED', usd: 0, rate: 0, pkr: 15106.94, adv: 72.00, st: 0.00, tot: 15178.94 },
+    { dt: '2026-10-09', m: 'Microsoft Teams', desc: 'Microsoft Teams', c: 'RED', usd: 0, rate: 0, pkr: 5528.16, adv: 26.00, st: 0.00, tot: 5554.16 },
+    { dt: '2026-10-12', m: 'Midjourney', desc: 'Midjourney', c: 'RED', usd: 0, rate: 0, pkr: 2924.43, adv: 0.00, st: 0.00, tot: 2924.43 },
+    { dt: '2026-10-13', m: 'Grok', desc: 'Grok', c: 'RED', usd: 0, rate: 0, pkr: 8773.30, adv: 0.00, st: 0.00, tot: 8773.30 },
+    { dt: '2026-10-15', m: 'Magnific', desc: 'Magnific', c: 'RED', usd: 0, rate: 0, pkr: 10350.00, adv: 0.00, st: 0.00, tot: 10350.00 },
+    { dt: '2026-10-15', m: 'Google One', desc: 'Google One', c: 'RED', usd: 0, rate: 0, pkr: 2800.00, adv: 0.00, st: 0.00, tot: 2800.00 },
+    { dt: '2026-10-18', m: 'ElevenLabs', desc: 'ElevenLabs', c: 'RED', usd: 0, rate: 0, pkr: 1729.40, adv: 0.00, st: 0.00, tot: 1729.40 },
+    { dt: '2026-10-18', m: 'Anthropic', desc: 'Anthropic', c: 'RED', usd: 0, rate: 0, pkr: 5847.82, adv: 0.00, st: 0.00, tot: 5847.82 },
+    { dt: '2026-10-18', m: 'Magnific', desc: 'Magnific', c: 'RED', usd: 0, rate: 0, pkr: 93150.00, adv: 0.00, st: 0.00, tot: 93150.00 },
+    { dt: '2026-10-19', m: 'SMS', desc: 'SMS', c: 'RED', usd: 0, rate: 0, pkr: 250.00, adv: 0.00, st: 0.00, tot: 250.00 },
+    { dt: '2026-10-19', m: 'Excise Duty', desc: 'Excise Duty', c: 'RED', usd: 0, rate: 0, pkr: 40.00, adv: 0.00, st: 0.00, tot: 40.00 }
+  ];
+
+  const tx1: Transaction[] = rawTx.map((t, idx) => ({
     id: idx + 1,
     statement_id: 1,
     transaction_date: t.dt,
@@ -103,7 +128,52 @@ function getInitialData(): MockDatabase {
     created_at: `${t.dt}T12:00:00Z`
   }));
 
+  const tx2: Transaction[] = rawTx2.map((t, idx) => ({
+    id: 100 + idx + 1,
+    statement_id: 2,
+    transaction_date: t.dt,
+    merchant_name: t.m,
+    description: t.desc,
+    allocation_id: catMap[t.c]?.id || 1,
+    allocation: catMap[t.c] || categories[0],
+    usd_amount: t.usd || undefined,
+    exchange_rate: t.rate || undefined,
+    pkr_amount: t.pkr,
+    advance_tax: t.adv,
+    sales_tax_withheld: t.st,
+    additional_sales_tax: 0,
+    fed_amount: 0,
+    bank_charges: 0,
+    other_taxes: 0,
+    total_amount: t.tot,
+    created_by: 'System Administrator',
+    approval_status: 'Approved',
+    created_at: `${t.dt}T12:00:00Z`
+  }));
+
+  const transactions: Transaction[] = [...tx2, ...tx1];
+
   const statements: Statement[] = [
+    {
+      id: 2,
+      card_id: 1,
+      credit_card: card,
+      statement_number: 'UBL-CC-2026-10',
+      statement_date: '2026-10-20',
+      payment_due_date: '2026-11-11',
+      period_start_date: '2026-09-21',
+      period_end_date: '2026-10-20',
+      opening_balance: 55774.00,
+      total_statement_amount: 619801.15,
+      amount_paid: 0.00,
+      outstanding_balance: 619801.15,
+      status: 'Draft',
+      notes: 'Statement cycle ending 20-Oct-2026 (UBL Credit Card Statement).',
+      created_by: 'System Administrator',
+      created_at: '2026-10-20T10:00:00Z',
+      updated_at: '2026-10-20T10:00:00Z',
+      transaction_count: tx2.length
+    },
     {
       id: 1,
       card_id: 1,
@@ -118,11 +188,11 @@ function getInitialData(): MockDatabase {
       amount_paid: 428273.70,
       outstanding_balance: 55774.00,
       status: 'Partially Paid',
-      notes: 'Statement cycle ending 20-Sep-2026 (Migrated from original Excel sheet).',
+      notes: 'Statement cycle ending 20-Sep-2026 (Historical statement).',
       created_by: 'System Administrator',
       created_at: '2026-09-20T10:00:00Z',
       updated_at: '2026-09-20T10:00:00Z',
-      transaction_count: transactions.length
+      transaction_count: tx1.length
     }
   ];
 
@@ -739,6 +809,11 @@ class MockBackendService {
     let txns = [...this.db.transactions];
     if (statementId) {
       txns = txns.filter(t => t.statement_id === statementId);
+    } else {
+      const defaultStmt = this.db.statements.find(s => s.statement_number === 'UBL-CC-2026-10') || this.db.statements[0];
+      if (defaultStmt) {
+        txns = txns.filter(t => t.statement_id === defaultStmt.id);
+      }
     }
     const catMap = Object.fromEntries(this.db.categories.map(c => [c.id, c]));
 
@@ -920,7 +995,7 @@ class MockBackendService {
     if (reportType === 'ubl_statement') {
       const stmt = statementId
         ? this.db.statements.find(s => s.id === statementId)
-        : this.db.statements[0];
+        : (this.db.statements.find(s => s.statement_number === 'UBL-CC-2026-10') || this.db.statements[0]);
       const stmtTxns = stmt
         ? this.db.transactions.filter(t => t.statement_id === stmt.id)
         : [...this.db.transactions];
@@ -1447,66 +1522,113 @@ class MockBackendService {
       });
     };
 
+    const formatTableDate = (dStr: string) => {
+      if (!dStr) return '-';
+      const parts = dStr.split('-');
+      if (parts.length === 3) {
+        const day = parts[2];
+        const monthIndex = parseInt(parts[1], 10) - 1;
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        if (months[monthIndex]) {
+          return `${day}-${months[monthIndex]}`;
+        }
+      }
+      const d = new Date(dStr);
+      if (!isNaN(d.getTime())) {
+        const day = String(d.getDate()).padStart(2, '0');
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return `${day}-${months[d.getMonth()]}`;
+      }
+      return dStr;
+    };
+
     let html = '';
 
     if (reportType === 'ubl_statement') {
       const stmt = statementId
         ? this.db.statements.find(s => s.id === statementId)
-        : this.db.statements[0];
+        : (this.db.statements.find(s => s.statement_number === 'UBL-CC-2026-10') || this.db.statements[0]);
       const stmtTxns = stmt
         ? this.db.transactions.filter(t => t.statement_id === stmt.id)
         : [...this.db.transactions];
 
-      const catGroups: Array<{
-        cat: AllocationCategory;
-        txns: Transaction[];
-        pkr: number;
-        adv: number;
-        st: number;
-        total: number;
-      }> = [];
+      const catMap = Object.fromEntries(this.db.categories.map(c => [c.id, c]));
 
+      const totUsd = stmtTxns.reduce((s, t) => s + (t.usd_amount ? Number(t.usd_amount) : 0), 0);
+      const totPkr = stmtTxns.reduce((s, t) => s + Number(t.pkr_amount || 0), 0);
+      const totAdv = stmtTxns.reduce((s, t) => s + Number(t.advance_tax || 0), 0);
+      const totSt = stmtTxns.reduce((s, t) => s + Number(t.sales_tax_withheld || 0), 0);
+      const totGrand = stmtTxns.reduce((s, t) => s + Number(t.total_amount || 0), 0);
+
+      const totalStmt = stmt ? Number(stmt.total_statement_amount || totGrand) : totGrand;
+      const amountPaid = stmt ? Number(stmt.amount_paid || 0) : 0;
+      const balanceDue = totalStmt - amountPaid;
+      const status = stmt?.status || 'Draft';
+      const stmtNum = stmt?.statement_number || 'UBL-CC-2026-10';
+      const stmtDate = stmt?.statement_date || '2026-10-20';
+      const dueDate = stmt?.payment_due_date || '2026-11-11';
+
+      // Summary allocation breakdown groups
+      const allocGroups: Record<number, { name: string; code: string; count: number; total: number }> = {};
       for (const cat of this.db.categories) {
-        const catTxns = stmtTxns.filter(t => t.allocation_id === cat.id);
-        if (catTxns.length === 0) continue;
-        const pkr = catTxns.reduce((s, t) => s + Number(t.pkr_amount || 0), 0);
-        const adv = catTxns.reduce((s, t) => s + Number(t.advance_tax || 0), 0);
-        const st = catTxns.reduce((s, t) => s + Number(t.sales_tax_withheld || 0), 0);
-        const total = catTxns.reduce((s, t) => s + Number(t.total_amount || 0), 0);
-        catGroups.push({ cat, txns: catTxns, pkr, adv, st, total });
+        allocGroups[cat.id] = {
+          name: cat.name,
+          code: cat.code,
+          count: 0,
+          total: 0
+        };
       }
+      const unalloc = { name: 'CHARGE TO UNALLOCATED', code: 'OTHER', count: 0, total: 0 };
 
-      const grandPkr = catGroups.reduce((s, g) => s + g.pkr, 0);
-      const grandAdv = catGroups.reduce((s, g) => s + g.adv, 0);
-      const grandSt = catGroups.reduce((s, g) => s + g.st, 0);
-      const grandTotal = catGroups.reduce((s, g) => s + g.total, 0);
-      const amountPaid = Number(stmt?.amount_paid || 0);
-      const balanceDue = grandTotal - amountPaid;
-      const sDate = stmt?.statement_date || '2026-10-20';
-      const dDate = stmt?.payment_due_date || '2026-11-11';
+      for (const t of stmtTxns) {
+        const amt = Number(t.total_amount || 0);
+        const catId = t.allocation_id;
+        if (catId && allocGroups[catId]) {
+          allocGroups[catId].count += 1;
+          allocGroups[catId].total += amt;
+        } else {
+          unalloc.count += 1;
+          unalloc.total += amt;
+        }
+      }
 
       html = `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>UBL Credit Card Statement - Red Publicis</title>
+  <title>RED PUBLICIS - ${stmtNum}</title>
   <style>
     @page {
       size: letter landscape;
-      margin: 0.35in 0.45in;
+      margin: 22px 28px 24px 28px;
     }
     @media print {
       .no-print { display: none !important; }
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
-      .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        margin: 0;
+        padding: 0;
+      }
+      .avoid-break {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      thead {
+        display: table-header-group;
+      }
+      tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
     }
     body {
-      font-family: Calibri, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      font-family: Helvetica, Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: #0f172a;
       background: white;
       margin: 0;
-      padding: 16px 20px;
-      font-size: 10.5px;
+      padding: 18px 26px;
+      font-size: 8pt;
     }
     .toolbar {
       display: flex;
@@ -1515,17 +1637,16 @@ class MockBackendService {
       background: #f1f5f9;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
-      padding: 8px 14px;
-      margin-bottom: 14px;
+      padding: 10px 16px;
+      margin-bottom: 16px;
     }
-    .toolbar-title { font-weight: 700; font-size: 12px; color: #1e293b; }
     .btn-print {
-      background: #1F4E79;
+      background: #002060;
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 7px 16px;
-      font-weight: 700;
+      padding: 8px 18px;
+      font-weight: bold;
       font-size: 11px;
       cursor: pointer;
     }
@@ -1534,275 +1655,369 @@ class MockBackendService {
       color: #334155;
       border: none;
       border-radius: 6px;
-      padding: 7px 14px;
+      padding: 8px 14px;
       font-weight: 600;
       font-size: 11px;
       cursor: pointer;
       margin-left: 8px;
     }
-    .header-bar {
+    .header-container {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      border-bottom: 2px solid #1F4E79;
-      padding-bottom: 10px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
-    .main-title {
-      font-size: 16px;
-      font-weight: 800;
+    .title-company {
+      font-size: 16pt;
+      font-weight: bold;
       color: #002060;
       margin: 0 0 4px 0;
       letter-spacing: -0.2px;
     }
-    .meta-subtitle {
-      font-size: 11px;
-      font-weight: 700;
-      color: #1F4E79;
+    .subtitle-stmt {
+      font-size: 10pt;
+      color: #333333;
       margin: 0;
     }
-    .meta-card {
-      font-size: 10px;
-      color: #64748b;
-      margin-top: 2px;
-    }
     .logo-img {
-      height: 36px;
+      height: 38px;
+      width: 175px;
       object-fit: contain;
     }
-    table.data-table {
+    /* Overview 4-column table */
+    .overview-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 12px;
-      font-size: 10px;
+      margin-top: 10px;
+      margin-bottom: 14px;
     }
-    table.data-table th {
+    .overview-table th {
       background: #1F4E79;
-      color: #ffffff;
-      padding: 6px 8px;
-      font-weight: 700;
+      color: white;
+      font-weight: bold;
+      font-size: 10pt;
+      padding: 6px 10px;
       text-align: center;
-      border: 1px solid #1F4E79;
+      border: 0.5px solid #CCCCCC;
     }
-    table.data-table td {
-      padding: 4px 8px;
-      border: 1px solid #d9d9d9;
-      vertical-align: middle;
-    }
-    .cat-head {
-      background: #D9E1F2 !important;
+    .overview-table td {
+      background: #F2F4F7;
       color: #002060;
-      font-weight: 700;
-      font-size: 10.5px;
-      padding: 5px 8px;
-      border: 1px solid #bfdbfe !important;
-      text-align: left;
+      font-weight: bold;
+      font-size: 11pt;
+      padding: 6px 10px;
+      text-align: center;
+      border: 0.5px solid #CCCCCC;
     }
-    .subtotal-row {
-      background: #F2F2F2 !important;
-      font-weight: 700;
+    /* Transactions Table */
+    .trans-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8pt;
+      margin-bottom: 14px;
     }
-    .grand-total-row {
-      background: #C6D9F1 !important;
-      font-weight: 800;
-      font-size: 11px;
-      border-bottom: 3px double #000000 !important;
+    .trans-table th {
+      background: #002060;
+      color: white;
+      font-weight: bold;
+      font-size: 8pt;
+      padding: 5px 6px;
+      border: 0.5px solid #E0E0E0;
     }
-    .paid-row {
-      background: #ffffff;
-      font-weight: 700;
+    .trans-table td {
+      padding: 4px 6px;
+      border: 0.5px solid #E0E0E0;
+      font-size: 8pt;
     }
-    .bal-row {
-      background: #e2e8f0;
-      font-weight: 800;
-      font-size: 11px;
-      border-bottom: 3px double #000000 !important;
+    .trans-table tr.even {
+      background-color: #F9FAFB;
+    }
+    .trans-table tr.odd {
+      background-color: #ffffff;
+    }
+    .trans-table tr.grand-total-row {
+      background-color: #EBF1F5;
+      color: #002060;
+      font-weight: bold;
+      font-size: 8.5pt;
+      border-top: 1.2px solid #002060;
+      border-bottom: 1.5px solid #002060;
+    }
+    .trans-table tr.grand-total-row td {
+      padding: 5px 6px;
     }
     .num {
       text-align: right;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
-    .center { text-align: center; }
-    .signatures-row {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 22px;
-      margin-bottom: 22px;
-      padding: 0 10px;
-      font-size: 10.5px;
-      font-weight: 700;
-      color: #000000;
+    .center {
+      text-align: center;
     }
-    .summary-section {
-      width: 420px;
-      margin-top: 10px;
-      border: 1px solid #1F4E79;
+    .left {
+      text-align: left;
+    }
+    /* Summary Area */
+    .summary-wrap {
+      margin-top: 14px;
+      margin-bottom: 16px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .summary-table {
+      width: 600px;
+      margin: 0 auto;
       border-collapse: collapse;
-      font-size: 10.5px;
+      font-size: 8pt;
     }
-    .summary-section th.banner {
+    .summary-table th.banner {
       background: #1F4E79;
       color: white;
+      font-weight: bold;
+      font-size: 9.5pt;
+      padding: 4px;
       text-align: center;
-      padding: 6px;
-      font-size: 11px;
-      font-weight: 800;
     }
-    .summary-section th.sub {
-      background: #f8fafc;
-      color: #1F4E79;
-      padding: 5px 8px;
-      font-weight: 700;
-      border-bottom: 1px solid #cbd5e1;
+    .summary-table th.subhead {
+      background: #002060;
+      color: white;
+      font-weight: bold;
+      font-size: 8pt;
+      padding: 3px 6px;
     }
-    .summary-section td {
+    .summary-table td {
+      padding: 3px 8px;
+      border: 0.5px solid #E2E8F0;
+      font-size: 8pt;
+    }
+    .summary-table tr.even {
+      background-color: #F8FAFC;
+    }
+    .summary-table tr.odd {
+      background-color: #ffffff;
+    }
+    .summary-table tr.gtot-row {
+      background-color: #EBF1F5;
+      color: #002060;
+      font-weight: bold;
+      font-size: 8.5pt;
+      border-top: 1px solid #002060;
+      border-bottom: 1.5px solid #002060;
+    }
+    .summary-table tr.gtot-row td {
       padding: 4px 8px;
-      border: 1px solid #e2e8f0;
     }
-    .summary-section tr.gtot td {
-      font-weight: 800;
-      border-top: 1px solid #000000;
-      border-bottom: 3px double #000000;
+    /* Signature Area */
+    .signatures-wrap {
+      margin-top: 16px;
+      margin-bottom: 20px;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
-    .footer-note {
-      margin-top: 14px;
-      font-size: 9px;
-      color: #94a3b8;
+    .signatures-container {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+    }
+    .sig-card {
+      width: 232px;
+      border: 0.75px solid #CBD5E1;
+      background-color: #F8FAFC;
+      border-radius: 3px;
+      padding: 8px 12px 10px 12px;
+      box-sizing: border-box;
+    }
+    .sig-title {
+      font-size: 9pt;
+      font-weight: bold;
+      color: #002060;
+      text-align: center;
+    }
+    .sig-sub {
+      font-size: 8pt;
+      color: #475569;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .sig-line {
+      font-size: 8pt;
+      color: #1E293B;
+      margin-bottom: 4px;
+      white-space: nowrap;
+    }
+    .footer-bar {
       display: flex;
       justify-content: space-between;
+      font-size: 8pt;
+      color: #666666;
+      margin-top: 16px;
+      padding-top: 6px;
     }
   </style>
 </head>
 <body>
   <div class="toolbar no-print">
-    <div class="toolbar-title">📄 UBL Credit Card Statement — US Letter Landscape View</div>
+    <div style="font-weight: bold; font-size: 12px; color: #002060;">📄 RED PUBLICIS — UBL Credit Card Statement (${stmtNum})</div>
     <div>
       <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF (Letter Landscape)</button>
       <button class="btn-close" onclick="window.close()">✕ Close</button>
     </div>
   </div>
 
-  <div class="header-bar">
+  <div class="header-container">
     <div>
-      <h1 class="main-title">RED PUBLICIS - UBL CREDIT CARD STATEMENT FOR PAYMENT</h1>
-      <p class="meta-subtitle">Statement Date: ${sDate} &nbsp;&nbsp;|&nbsp;&nbsp; Payment Due Date: ${dDate}</p>
-      <div class="meta-card">Card: UBL Corporate Credit Card &bull; Account: ${this.db.card?.card_number_last4 ? `**** **** **** ${this.db.card.card_number_last4}` : '4123-XXXX-XXXX-8901'} &bull; Statement #${stmt?.statement_number || 'UBL-CC-2026-10'}</div>
+      <div class="title-company">RED PUBLICIS (COMMUNICATION ARTS)</div>
+      <div class="subtitle-stmt"><b>UBL Credit Card Statement:</b> ${stmtNum} | <b>Statement Date:</b> ${stmtDate} | <b>Due Date:</b> ${dueDate}</div>
     </div>
     <div>
-      <img src="/logo.png" class="logo-img" alt="Red Publicis Logo" onerror="this.style.display='none'" />
+      <img src="/logo.png" class="logo-img" alt="RED publicis" onerror="this.style.display='none'" />
     </div>
   </div>
 
-  <table class="data-table">
+  <table class="overview-table">
     <thead>
       <tr>
-        <th style="width: 28%; text-align: left;">Party / Merchant Name</th>
-        <th style="width: 10%;">Online (USD)</th>
-        <th style="width: 10%;">Exchange Rate</th>
-        <th style="width: 12%;">Rs. (PKR)</th>
-        <th style="width: 10%;">Adv Tax</th>
-        <th style="width: 11%;">Sales Tax Withheld</th>
-        <th style="width: 12%;">Total Amount</th>
-        <th style="width: 7%;">Status</th>
+        <th style="width: 25%;">Total Statement</th>
+        <th style="width: 25%;">Total Paid</th>
+        <th style="width: 25%;">Outstanding Balance</th>
+        <th style="width: 25%;">Status</th>
       </tr>
     </thead>
     <tbody>
-      ${catGroups.map(g => `
-        <tr>
-          <td colspan="8" class="cat-head">${g.cat.name}</td>
-        </tr>
-        ${g.txns.map(t => `
-          <tr>
-            <td>${t.description || t.merchant_name}</td>
-            <td class="num">${t.usd_amount ? `$${fmt(t.usd_amount)}` : '-'}</td>
-            <td class="num">${t.exchange_rate ? fmt(t.exchange_rate, 4) : '-'}</td>
-            <td class="num">${fmt(t.pkr_amount)}</td>
-            <td class="num">${fmt(t.advance_tax)}</td>
-            <td class="num">${fmt(t.sales_tax_withheld)}</td>
-            <td class="num" style="font-weight: 700;">${fmt(t.total_amount)}</td>
-            <td class="center">${t.approval_status || 'Approved'}</td>
-          </tr>
-        `).join('')}
-        <tr class="subtotal-row">
-          <td style="font-weight: 700;">SUBTOTAL (${g.cat.name})</td>
-          <td class="num">-</td>
-          <td class="num">-</td>
-          <td class="num">${fmt(g.pkr)}</td>
-          <td class="num">${fmt(g.adv)}</td>
-          <td class="num">${fmt(g.st)}</td>
-          <td class="num">${fmt(g.total)}</td>
-          <td class="center">-</td>
-        </tr>
-        <tr><td colspan="8" style="height: 6px; background: transparent; border: none;"></td></tr>
-      `).join('')}
-
-      <tr class="grand-total-row avoid-break">
-        <td style="font-weight: 800;">GRAND TOTAL</td>
-        <td class="num">-</td>
-        <td class="num">-</td>
-        <td class="num">${fmt(grandPkr)}</td>
-        <td class="num">${fmt(grandAdv)}</td>
-        <td class="num">${fmt(grandSt)}</td>
-        <td class="num" style="font-size: 11.5px;">${fmt(grandTotal)}</td>
-        <td class="center">-</td>
-      </tr>
-
-      <tr class="paid-row avoid-break">
-        <td style="font-weight: 700;">AMOUNT PAID</td>
-        <td colspan="5"></td>
-        <td class="num" style="font-weight: 700;">${fmt(amountPaid)}</td>
-        <td></td>
-      </tr>
-
-      <tr class="bal-row avoid-break">
-        <td style="font-weight: 800;">OUTSTANDING BALANCE</td>
-        <td colspan="5"></td>
-        <td class="num" style="font-weight: 800; font-size: 11.5px;">${fmt(balanceDue)}</td>
-        <td></td>
+      <tr>
+        <td>PKR ${fmt(totalStmt)}</td>
+        <td>PKR ${fmt(amountPaid)}</td>
+        <td>PKR ${fmt(balanceDue)}</td>
+        <td>${status}</td>
       </tr>
     </tbody>
   </table>
 
-  <div class="signatures-row avoid-break">
-    <div>IT / Prepared By: ___________________________</div>
-    <div>Admin & HR: ___________________________</div>
-    <div>Head of Finance: ___________________________</div>
-  </div>
+  <table class="trans-table">
+    <thead>
+      <tr>
+        <th style="width: 55px; text-align: center;">Date</th>
+        <th style="text-align: left;">Merchant / Party</th>
+        <th style="width: 75px; text-align: center;">Allocation</th>
+        <th style="width: 60px; text-align: right;">USD</th>
+        <th style="width: 50px; text-align: right;">Rate</th>
+        <th style="width: 80px; text-align: right;">PKR</th>
+        <th style="width: 65px; text-align: right;">Adv Tax</th>
+        <th style="width: 65px; text-align: right;">Sales Tax</th>
+        <th style="width: 95px; text-align: right;">Total PKR</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${stmtTxns.map((t, idx) => {
+        const cat = catMap[t.allocation_id || 1];
+        const code = cat?.code || 'RED';
+        const isEven = idx % 2 === 1;
+        return `
+          <tr class="${isEven ? 'even' : 'odd'}">
+            <td class="center">${formatTableDate(t.transaction_date)}</td>
+            <td class="left">${t.merchant_name}</td>
+            <td class="center">${code}</td>
+            <td class="num">${t.usd_amount ? fmt(t.usd_amount) : '-'}</td>
+            <td class="num">${t.exchange_rate ? fmt(t.exchange_rate, 2) : '-'}</td>
+            <td class="num">${fmt(t.pkr_amount)}</td>
+            <td class="num">${fmt(t.advance_tax)}</td>
+            <td class="num">${fmt(t.sales_tax_withheld)}</td>
+            <td class="num">${fmt(t.total_amount)}</td>
+          </tr>
+        `;
+      }).join('')}
 
-  <div class="avoid-break" style="margin-top: 15px;">
-    <table class="summary-section">
+      <tr class="grand-total-row">
+        <td colspan="3" class="left" style="font-weight: bold; color: #002060;">GRAND TOTAL</td>
+        <td class="num">${totUsd > 0 ? `$${fmt(totUsd)}` : '-'}</td>
+        <td class="num">-</td>
+        <td class="num" style="font-weight: bold;">${fmt(totPkr)}</td>
+        <td class="num" style="font-weight: bold;">${fmt(totAdv)}</td>
+        <td class="num" style="font-weight: bold;">${fmt(totSt)}</td>
+        <td class="num" style="font-weight: bold; color: #002060;">${fmt(totGrand)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="summary-wrap">
+    <table class="summary-table">
       <thead>
         <tr>
-          <th colspan="2" class="banner">SUMMARY</th>
+          <th colspan="5" class="banner">SUMMARY (ALLOCATION BREAKDOWN)</th>
         </tr>
         <tr>
-          <th class="sub" style="text-align: left;">DETAIL</th>
-          <th class="sub" style="text-align: right; width: 140px;">AMOUNT (PKR)</th>
+          <th class="subhead" style="width: 240px; text-align: left;">DETAIL</th>
+          <th class="subhead" style="width: 80px; text-align: center;">CODE</th>
+          <th class="subhead" style="width: 60px; text-align: center;">TXNS</th>
+          <th class="subhead" style="width: 130px; text-align: right;">AMOUNT (PKR)</th>
+          <th class="subhead" style="width: 90px; text-align: right;">% SHARE</th>
         </tr>
       </thead>
       <tbody>
-        ${this.db.categories.map(c => {
-          const group = catGroups.find(g => g.cat.id === c.id);
-          const amt = group ? group.total : 0;
+        ${this.db.categories.map((c, idx) => {
+          const data = allocGroups[c.id] || { count: 0, total: 0 };
+          const pct = totGrand > 0 ? ((data.total / totGrand) * 100).toFixed(1) : '0.0';
+          const isEven = idx % 2 === 1;
           return `
-            <tr>
-              <td style="font-weight: 700;">${c.name}</td>
-              <td class="num" style="font-weight: 700;">${fmt(amt)}</td>
+            <tr class="${isEven ? 'even' : 'odd'}">
+              <td class="left">${c.name}</td>
+              <td class="center">${c.code}</td>
+              <td class="center">${data.count}</td>
+              <td class="num">${fmt(data.total)}</td>
+              <td class="num">${pct}%</td>
             </tr>
           `;
         }).join('')}
-        <tr class="gtot">
-          <td style="text-align: right; font-weight: 800;">G.TOTAL</td>
-          <td class="num" style="font-weight: 800;">${fmt(grandTotal)}</td>
+
+        ${unalloc.count > 0 ? `
+          <tr class="odd">
+            <td class="left">${unalloc.name}</td>
+            <td class="center">${unalloc.code}</td>
+            <td class="center">${unalloc.count}</td>
+            <td class="num">${fmt(unalloc.total)}</td>
+            <td class="num">${totGrand > 0 ? ((unalloc.total / totGrand) * 100).toFixed(1) : '0.0'}%</td>
+          </tr>
+        ` : ''}
+
+        <tr class="gtot-row">
+          <td colspan="2" class="left" style="font-weight: bold; color: #002060;">G.TOTAL</td>
+          <td class="center" style="font-weight: bold;">${stmtTxns.length}</td>
+          <td class="num" style="font-weight: bold; color: #002060;">${fmt(totGrand)}</td>
+          <td class="num" style="font-weight: bold;">100.0%</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <div class="footer-note no-print">
-    <span>RED PUBLICIS — Official UBL Credit Card Financial Statement</span>
-    <span>Paper Form Factor: US Letter Landscape (8.5 &times; 11 inches)</span>
+  <div class="signatures-wrap">
+    <div class="signatures-container">
+      <div class="sig-card">
+        <div class="sig-title">PREPARED BY</div>
+        <div class="sig-sub">IT Department</div>
+        <div style="height: 24px;"></div>
+        <div class="sig-line">Signature: ______________________</div>
+        <div class="sig-line">Date: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;______________________</div>
+      </div>
+      <div class="sig-card">
+        <div class="sig-title">VERIFIED BY</div>
+        <div class="sig-sub">Admin & HR</div>
+        <div style="height: 24px;"></div>
+        <div class="sig-line">Signature: ______________________</div>
+        <div class="sig-line">Date: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;______________________</div>
+      </div>
+      <div class="sig-card">
+        <div class="sig-title">APPROVED BY</div>
+        <div class="sig-sub">Head of Finance</div>
+        <div style="height: 24px;"></div>
+        <div class="sig-line">Signature: ______________________</div>
+        <div class="sig-line">Date: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;______________________</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    <div>RED PUBLICIS | US Letter (8.5 x 11 in)</div>
+    <div>Page 1</div>
   </div>
 
   <script>
@@ -1813,7 +2028,7 @@ class MockBackendService {
 </body>
 </html>`;
     } else {
-      // Standard US Letter Landscape report for other 9 types
+      // Standard US Letter Landscape report for other 9 types with same corporate layout
       const data = await this.getReportPreview(reportType, statementId);
       const headers: string[] = data.headers || [];
       const rows: any[][] = data.rows || [];
@@ -1826,16 +2041,32 @@ class MockBackendService {
   <style>
     @page {
       size: letter landscape;
-      margin: 0.35in 0.45in;
+      margin: 22px 28px 24px 28px;
     }
     @media print {
       .no-print { display: none !important; }
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; }
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        margin: 0;
+        padding: 0;
+      }
+      .avoid-break {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      thead {
+        display: table-header-group;
+      }
+      tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
     }
     body {
-      font-family: Calibri, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      padding: 18px 22px;
-      font-size: 11px;
+      font-family: Helvetica, Arial, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 18px 26px;
+      font-size: 8.5pt;
       color: #0f172a;
     }
     .toolbar {
@@ -1845,67 +2076,136 @@ class MockBackendService {
       background: #f1f5f9;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
-      padding: 8px 14px;
-      margin-bottom: 14px;
+      padding: 10px 16px;
+      margin-bottom: 16px;
     }
     .btn-print {
-      background: #1F4E79;
+      background: #002060;
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 7px 16px;
-      font-weight: 700;
+      padding: 8px 18px;
+      font-weight: bold;
       font-size: 11px;
       cursor: pointer;
     }
+    .btn-close {
+      background: #e2e8f0;
+      color: #334155;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-weight: 600;
+      font-size: 11px;
+      cursor: pointer;
+      margin-left: 8px;
+    }
     .header {
-      border-bottom: 2px solid #1F4E79;
-      padding-bottom: 10px;
-      margin-bottom: 14px;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+      margin-bottom: 12px;
     }
-    h1 { color: #002060; font-size: 17px; margin: 0 0 4px 0; }
-    p { color: #1F4E79; margin: 0; font-size: 11px; font-weight: 600; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .title-company {
+      font-size: 16pt;
+      font-weight: bold;
+      color: #002060;
+      margin: 0 0 4px 0;
+    }
+    .subtitle-report {
+      font-size: 10pt;
+      color: #333333;
+      margin: 0;
+    }
+    .logo-img {
+      height: 38px;
+      width: 175px;
+      object-fit: contain;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 8pt;
+    }
     th {
-      background: #1F4E79;
+      background: #002060;
       color: white;
-      padding: 7px 9px;
+      padding: 6px 8px;
       text-align: left;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-      border: 1px solid #1F4E79;
+      font-size: 8pt;
+      font-weight: bold;
+      border: 0.5px solid #002060;
     }
     td {
-      border: 1px solid #e2e8f0;
-      padding: 6px 9px;
+      border: 0.5px solid #e2e8f0;
+      padding: 5px 8px;
+      font-size: 8pt;
     }
-    tr:nth-child(even) { background: #f8fafc; }
+    tr.even { background-color: #f8fafc; }
+    tr.odd { background-color: #ffffff; }
     .num { text-align: right; font-variant-numeric: tabular-nums; }
     .center { text-align: center; }
-    .signatures {
+    .signatures-wrap {
+      margin-top: 22px;
+      margin-bottom: 20px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .signatures-container {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+    }
+    .sig-card {
+      width: 232px;
+      border: 0.75px solid #CBD5E1;
+      background-color: #F8FAFC;
+      border-radius: 3px;
+      padding: 8px 12px 10px 12px;
+      box-sizing: border-box;
+    }
+    .sig-title {
+      font-size: 9pt;
+      font-weight: bold;
+      color: #002060;
+      text-align: center;
+    }
+    .sig-sub {
+      font-size: 8pt;
+      color: #475569;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .sig-line {
+      font-size: 8pt;
+      color: #1E293B;
+      margin-bottom: 4px;
+      white-space: nowrap;
+    }
+    .footer-bar {
       display: flex;
       justify-content: space-between;
-      margin-top: 30px;
-      font-size: 10.5px;
-      font-weight: 700;
+      font-size: 8pt;
+      color: #666666;
+      margin-top: 16px;
     }
   </style>
 </head>
 <body>
   <div class="toolbar no-print">
-    <div style="font-weight: 700; font-size: 12px;">📄 ${reportType.replace(/_/g, ' ').toUpperCase()} — US Letter Landscape</div>
-    <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    <div style="font-weight: bold; font-size: 12px; color: #002060;">📄 ${reportType.replace(/_/g, ' ').toUpperCase()} — US Letter Landscape View</div>
+    <div>
+      <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <button class="btn-close" onclick="window.close()">✕ Close</button>
+    </div>
   </div>
   <div class="header">
     <div>
-      <h1>RED PUBLICIS (COMMUNICATION ARTS)</h1>
-      <p>Report: <strong>${reportType.replace(/_/g, ' ').toUpperCase()}</strong> &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>
+      <div class="title-company">RED PUBLICIS (COMMUNICATION ARTS)</div>
+      <div class="subtitle-report"><b>Report:</b> ${reportType.replace(/_/g, ' ').toUpperCase()} &nbsp;|&nbsp; <b>Generated:</b> ${new Date().toLocaleString()}</div>
     </div>
-    <img src="/logo.png" style="height: 36px; object-fit: contain;" alt="Logo" onerror="this.style.display='none'" />
+    <img src="/logo.png" class="logo-img" alt="Logo" onerror="this.style.display='none'" />
   </div>
   <table>
     <thead>
@@ -1916,17 +2216,41 @@ class MockBackendService {
     </thead>
     <tbody>
       ${rows.map((r: any[], idx: number) => `
-        <tr>
+        <tr class="${idx % 2 === 1 ? 'even' : 'odd'}">
           <td class="center" style="color: #64748b;">${idx + 1}</td>
           ${r.map((c: any) => `<td class="${typeof c === 'number' ? 'num' : ''}">${typeof c === 'number' ? fmt(c) : (c || '-')}</td>`).join('')}
         </tr>
       `).join('')}
     </tbody>
   </table>
-  <div class="signatures">
-    <div>Prepared By: ___________________________</div>
-    <div>Verified By: ___________________________</div>
-    <div>Approved By: ___________________________</div>
+  <div class="signatures-wrap">
+    <div class="signatures-container">
+      <div class="sig-card">
+        <div class="sig-title">PREPARED BY</div>
+        <div class="sig-sub">IT Department</div>
+        <div style="height: 24px;"></div>
+        <div class="sig-line">Signature: ______________________</div>
+        <div class="sig-line">Date: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;______________________</div>
+      </div>
+      <div class="sig-card">
+        <div class="sig-title">VERIFIED BY</div>
+        <div class="sig-sub">Admin & HR</div>
+        <div style="height: 24px;"></div>
+        <div class="sig-line">Signature: ______________________</div>
+        <div class="sig-line">Date: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;______________________</div>
+      </div>
+      <div class="sig-card">
+        <div class="sig-title">APPROVED BY</div>
+        <div class="sig-sub">Head of Finance</div>
+        <div style="height: 24px;"></div>
+        <div class="sig-line">Signature: ______________________</div>
+        <div class="sig-line">Date: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;______________________</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bar">
+    <div>RED PUBLICIS | US Letter (8.5 x 11 in)</div>
+    <div>Page 1</div>
   </div>
   <script>
     setTimeout(function() { window.print(); }, 600);
