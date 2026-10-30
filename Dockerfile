@@ -29,9 +29,9 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 WORKDIR /app/backend
 
-EXPOSE 5000
+EXPOSE 7860 5000
 
-ENV PORT=5000
+ENV PORT=7860
 ENV FLASK_ENV=production
 
-CMD ["sh", "-c", "gunicorn wsgi:app --bind 0.0.0.0:${PORT:-5000} --workers 3 --timeout 120"]
+CMD ["sh", "-c", "gunicorn wsgi:app --bind 0.0.0.0:${PORT:-7860} --workers 2 --timeout 120"]

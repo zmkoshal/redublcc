@@ -1,3 +1,13 @@
+---
+title: Red Publicis Credit Card Management
+emoji: 💳
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # RED Publicis Credit Card Statement & Expense Management System
 
 > **Enterprise Financial Management Solution for RED PUBLICIS (COMMUNICATION ARTS)**  
