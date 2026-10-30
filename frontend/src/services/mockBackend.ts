@@ -903,74 +903,135 @@ class MockBackendService {
 
   async downloadExcelReport(reportType: string, statementId?: number): Promise<void> {
     const data = await this.getReportPreview(reportType, statementId);
-    const headers = data.headers;
-    const rows = data.rows.map((r: any[]) => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`));
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r: string[]) => r.join(','))].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const headers: string[] = data.headers || [];
+    const rows: any[][] = data.rows || [];
+
+    const escapeXml = (val: any) => {
+      if (val === null || val === undefined) return '';
+      return String(val)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    };
+
+    const xml = `<?xml version="1.0" encoding="utf-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Header">
+   <Font ss:Bold="1" ss:Color="#FFFFFF" ss:FontName="Calibri" ss:Size="11"/>
+   <Interior ss:Color="#1F4E79" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="Default">
+   <Font ss:FontName="Calibri" ss:Size="11"/>
+   <Alignment ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="NumberCell">
+   <Font ss:FontName="Calibri" ss:Size="11"/>
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <NumberFormat ss:Format="#,##0.00"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="${escapeXml(reportType.slice(0, 30))}">
+  <Table>
+   <Row ss:StyleID="Header">
+    <Cell><Data ss:Type="String">#</Data></Cell>
+    ${headers.map((h: string) => `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`).join('')}
+   </Row>
+   ${rows.map((r: any[], idx: number) => `
+   <Row ss:StyleID="Default">
+    <Cell><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    ${r.map((c: any) => {
+      const isNum = typeof c === 'number';
+      return `<Cell ss:StyleID="${isNum ? 'NumberCell' : 'Default'}"><Data ss:Type="${isNum ? 'Number' : 'String'}">${escapeXml(c)}</Data></Cell>`;
+    }).join('')}
+   </Row>`).join('')}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
+    a.style.display = 'none';
     a.href = url;
-    a.download = `report_${reportType}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.setAttribute('download', `Report_${reportType}_${new Date().toISOString().slice(0, 10)}.xls`);
     document.body.appendChild(a);
     a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      if (document.body.contains(a)) {
+        document.body.removeChild(a);
+      }
+      window.URL.revokeObjectURL(url);
+    }, 2500);
   }
 
   async downloadPdfReport(reportType: string, statementId?: number): Promise<void> {
     const data = await this.getReportPreview(reportType, statementId);
     const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <!doctype html>
-        <html>
-          <head>
-            <title>${reportType} - Red Publicis</title>
-            <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 25px; font-size: 11px; color: #1e293b; }
-              .header { border-bottom: 2px solid #1F4E79; padding-bottom: 12px; margin-bottom: 16px; }
-              h1 { color: #1F4E79; font-size: 18px; margin: 0 0 4px 0; }
-              p { color: #64748b; margin: 0; font-size: 11px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-              th { background: #1F4E79; color: white; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-              td { border-bottom: 1px solid #e2e8f0; padding: 7px 10px; }
-              tr:nth-child(even) { background: #f8fafc; }
-              .num { text-align: right; font-variant-numeric: tabular-nums; }
-              @media print {
-                body { padding: 0; }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>RED PUBLICIS (COMMUNICATION ARTS)</h1>
-              <p>Financial Statement Report: <strong>${reportType.replace(/_/g, ' ').toUpperCase()}</strong> | Generated: ${new Date().toLocaleString()}</p>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th style="width: 30px;">#</th>
-                  ${data.headers.map((h: string) => `<th>${h}</th>`).join('')}
-                </tr>
-              </thead>
-              <tbody>
-                ${data.rows.map((r: any[], idx: number) => `
-                  <tr>
-                    <td style="color: #94a3b8;">${idx + 1}</td>
-                    ${r.map((c: any) => `<td class="${typeof c === 'number' ? 'num' : ''}">${typeof c === 'number' ? c.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : c}</td>`).join('')}
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
+    if (!printWindow) {
+      window.print();
+      return;
     }
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>${reportType} - Red Publicis</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 25px; font-size: 11px; color: #1e293b; }
+            .header { border-bottom: 2px solid #1F4E79; padding-bottom: 12px; margin-bottom: 16px; }
+            h1 { color: #1F4E79; font-size: 18px; margin: 0 0 4px 0; }
+            p { color: #64748b; margin: 0; font-size: 11px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            th { background: #1F4E79; color: white; padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+            td { border-bottom: 1px solid #e2e8f0; padding: 7px 10px; }
+            tr:nth-child(even) { background: #f8fafc; }
+            .num { text-align: right; font-variant-numeric: tabular-nums; }
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>RED PUBLICIS (COMMUNICATION ARTS)</h1>
+            <p>Financial Statement Report: <strong>${reportType.replace(/_/g, ' ').toUpperCase()}</strong> | Generated: ${new Date().toLocaleString()}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 30px;">#</th>
+                ${data.headers.map((h: string) => `<th>${h}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.rows.map((r: any[], idx: number) => `
+                <tr>
+                  <td style="color: #94a3b8;">${idx + 1}</td>
+                  ${r.map((c: any) => `<td class="${typeof c === 'number' ? 'num' : ''}">${typeof c === 'number' ? c.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : c}</td>`).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 600);
   }
 
   // --- Audit Logs ---

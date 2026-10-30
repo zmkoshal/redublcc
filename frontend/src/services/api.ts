@@ -412,7 +412,7 @@ export const api = {
     );
   },
   getReportPreview: async (reportType: string, statementId?: number) => {
-    const url = statementId ? `${API_BASE}/reports/preview/${reportType}&statement_id=${statementId}` : `${API_BASE}/reports/preview/${reportType}`;
+    const url = statementId ? `${API_BASE}/reports/preview/${reportType}?statement_id=${statementId}` : `${API_BASE}/reports/preview/${reportType}`;
     return safeCall(
       () => fetch(url, { headers: getHeaders() }),
       () => mockBackend.getReportPreview(reportType, statementId)
@@ -420,48 +420,52 @@ export const api = {
   },
   downloadExcelReport: async (reportType: string, statementId?: number) => {
     try {
-      const url = statementId ? `${API_BASE}/reports/excel/${reportType}&statement_id=${statementId}` : `${API_BASE}/reports/excel/${reportType}`;
+      const url = statementId ? `${API_BASE}/reports/excel/${reportType}?statement_id=${statementId}` : `${API_BASE}/reports/excel/${reportType}`;
       const res = await fetch(url, { headers: getHeaders() });
       if (res.ok) {
         const blob = await res.blob();
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
+        a.style.display = 'none';
         a.href = downloadUrl;
         a.download = `report_${reportType}_${new Date().toISOString().slice(0, 10)}.xlsx`;
         document.body.appendChild(a);
         a.click();
-        a.remove();
-        window.URL.revokeObjectURL(downloadUrl);
+        setTimeout(() => {
+          if (document.body.contains(a)) document.body.removeChild(a);
+          window.URL.revokeObjectURL(downloadUrl);
+        }, 2500);
         return;
       }
     } catch {
-      // Fallback to client-side CSV export
+      // Fallback
     }
     await mockBackend.downloadExcelReport(reportType, statementId);
   },
   downloadPdfReport: async (reportType: string, statementId?: number) => {
     try {
-      const url = statementId ? `${API_BASE}/reports/pdf/${reportType}&statement_id=${statementId}` : `${API_BASE}/reports/pdf/${reportType}`;
+      const url = statementId ? `${API_BASE}/reports/pdf/${reportType}?statement_id=${statementId}` : `${API_BASE}/reports/pdf/${reportType}`;
       const res = await fetch(url, { headers: getHeaders() });
       if (res.ok) {
         const blob = await res.blob();
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
+        a.style.display = 'none';
         a.href = downloadUrl;
         a.download = `report_${reportType}_${new Date().toISOString().slice(0, 10)}.pdf`;
         document.body.appendChild(a);
         a.click();
-        a.remove();
-        window.URL.revokeObjectURL(downloadUrl);
+        setTimeout(() => {
+          if (document.body.contains(a)) document.body.removeChild(a);
+          window.URL.revokeObjectURL(downloadUrl);
+        }, 2500);
         return;
       }
     } catch {
-      // Fallback to print
+      // Fallback
     }
     await mockBackend.downloadPdfReport(reportType, statementId);
   },
-
-  // Audit Logs
   getAuditLogs: async (params?: Record<string, any>) => {
     const query = new URLSearchParams(params || {}).toString();
     return safeCall(

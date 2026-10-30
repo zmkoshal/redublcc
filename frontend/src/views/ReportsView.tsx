@@ -23,6 +23,7 @@ export const ReportsView: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [downloadingExcel, setDownloadingExcel] = useState<boolean>(false);
   const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false);
+  const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadMetadata();
@@ -64,7 +65,10 @@ export const ReportsView: React.FC = () => {
     const stmtId = selectedStatement ? Number(selectedStatement) : undefined;
     setDownloadingExcel(true);
     try {
+      setDownloadMessage(null);
       await api.downloadExcelReport(selectedReport, stmtId);
+      setDownloadMessage("Excel spreadsheet downloaded successfully!");
+      setTimeout(() => setDownloadMessage(null), 4000);
     } catch (err: any) {
       console.error('Excel download error:', err);
       alert(err.message || 'Failed to download Excel report');
@@ -113,6 +117,11 @@ export const ReportsView: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-2">
+          {downloadMessage && (
+            <span className="text-emerald-700 dark:text-emerald-300 text-xs font-bold bg-emerald-100 dark:bg-emerald-950/80 px-3 py-1.5 rounded-xl border border-emerald-300">
+              ✓ {downloadMessage}
+            </span>
+          )}
           <button
             onClick={handleDownloadExcel}
             disabled={downloadingExcel}
