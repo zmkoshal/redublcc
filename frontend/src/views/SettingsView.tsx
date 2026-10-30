@@ -33,14 +33,8 @@ export const SettingsView: React.FC = () => {
     }
     setClearingData(true);
     try {
-      const token = localStorage.getItem('token') || '';
-      const res = await fetch('/api/settings/clear-transaction-data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await api.clearTransactionData();
+      const res = { ok: true };
       if (res.ok) {
         alert("All statements, transactions, payments, and reconciliation records have been cleared. The database is clean for fresh entries.");
         window.location.reload();

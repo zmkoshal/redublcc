@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
 function getHeaders(isJson = true): HeadersInit {
   const token = localStorage.getItem('taniisha_token');
@@ -400,5 +400,12 @@ export const api = {
     a.click();
     a.remove();
     window.URL.revokeObjectURL(downloadUrl);
+  },
+  clearTransactionData: async () => {
+    const res = await fetch(`${API_BASE}/settings/clear-transaction-data`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    return handleResponse<any>(res);
   }
 };
