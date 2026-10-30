@@ -34,4 +34,4 @@ EXPOSE 5000
 ENV PORT=5000
 ENV FLASK_ENV=production
 
-CMD ["gunicorn", "wsgi:app", "--bind", "0.0.0.0:5000", "--workers", "3", "--timeout", "120"]
+CMD ["sh", "-c", "gunicorn wsgi:app --bind 0.0.0.0:${PORT:-5000} --workers 3 --timeout 120"]
