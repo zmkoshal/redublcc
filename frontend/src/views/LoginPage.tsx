@@ -18,9 +18,9 @@ import { Modal } from '../components/common/Modal';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
-  const [username, setUsername] = useState<string>('superadmin');
-  const [password, setPassword] = useState<string>('Admin@123');
-  const [rememberMe, setRememberMe] = useState<boolean>(true);
+  const [username, setUsername] = useState<string>(() => localStorage.getItem('red_remember_username') || '');
+  const [password, setPassword] = useState<string>('');
+  const [rememberMe, setRememberMe] = useState<boolean>(() => !!localStorage.getItem('red_remember_username'));
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -43,11 +43,6 @@ export const LoginPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickLogin = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
   };
 
   return (
@@ -252,50 +247,6 @@ export const LoginPage: React.FC = () => {
                 )}
               </button>
             </form>
-
-            {/* Quick Demo Credentials Autofill */}
-            <div className="mt-8 pt-6 border-t border-slate-800/80">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">
-                Quick One-Click Test Accounts
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('superadmin', 'Admin@123')}
-                  className="p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors"
-                >
-                  <p className="font-bold text-white">Super Admin</p>
-                  <p className="text-[10px] text-slate-400 font-mono">superadmin</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('finance', 'Finance@123')}
-                  className="p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors"
-                >
-                  <p className="font-bold text-white">Finance / HOF</p>
-                  <p className="text-[10px] text-slate-400 font-mono">finance</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('itadmin', 'It@123')}
-                  className="p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors"
-                >
-                  <p className="font-bold text-white">IT / Data Entry</p>
-                  <p className="text-[10px] text-slate-400 font-mono">itadmin</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('manager', 'Manager@123')}
-                  className="p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition-colors"
-                >
-                  <p className="font-bold text-white">Management</p>
-                  <p className="text-[10px] text-slate-400 font-mono">manager</p>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>

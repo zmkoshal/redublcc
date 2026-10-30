@@ -23,6 +23,7 @@ interface MockDatabase {
   reconciliations: Record<number, ReconciliationRecord>;
   auditLogs: AuditLog[];
   settings: Record<string, string>;
+  userPasswords?: Record<string, string>;
 }
 
 const STORAGE_KEY = 'red_publicis_local_db_v3';
@@ -253,6 +254,17 @@ function getInitialData(): MockDatabase {
     card_number_last4: '9821'
   };
 
+  const userPasswords: Record<string, string> = {
+    'superadmin': 'Admin@123',
+    'finance': 'Finance@123',
+    'itadmin': 'It@123',
+    'manager': 'Manager@123',
+    '1': 'Admin@123',
+    '2': 'Finance@123',
+    '3': 'It@123',
+    '4': 'Manager@123'
+  };
+
   return {
     users,
     card,
@@ -263,7 +275,8 @@ function getInitialData(): MockDatabase {
     payments,
     reconciliations,
     auditLogs,
-    settings
+    settings,
+    userPasswords
   };
 }
 
@@ -283,6 +296,21 @@ class MockBackendService {
       this.db = getInitialData();
       this.save();
     }
+
+    // Ensure userPasswords exists even if older DB exists in localStorage
+    if (!this.db.userPasswords) {
+      this.db.userPasswords = {
+        'superadmin': 'Admin@123',
+        'finance': 'Finance@123',
+        'itadmin': 'It@123',
+        'manager': 'Manager@123',
+        '1': 'Admin@123',
+        '2': 'Finance@123',
+        '3': 'It@123',
+        '4': 'Manager@123'
+      };
+      this.save();
+    }
   }
 
   private save() {
@@ -294,11 +322,47 @@ class MockBackendService {
   }
 
   // --- Auth ---
-  async login(username: string, _pass: string): Promise<{ token: string; user: User }> {
-    const u = this.db.users.find(x => x.username.toLowerCase() === username.toLowerCase() || x.email.toLowerCase() === username.toLowerCase());
-    const user = u || this.db.users[0]; // fallback to superadmin
-    const token = `mock-token-${user.id}-${Date.now()}`;
-    return { token, user };
+  async login(username: string, pass: string): Promise<{ token: string; user: User }> {
+    const rawUser = (username || '').trim().toLowerCase();
+    const rawPass = (pass || '').trim();
+
+    if (!rawUser || !rawPass) {
+      throw new Error('Please enter both your username and password.');
+    }
+
+    const u = this.db.users.find(
+      x => x.username.toLowerCase() === rawUser ||
+           x.email.toLowerCase() === rawUser
+    );
+
+    if (!u) {
+      throw new Error('Invalid username or password.');
+    }
+
+    if (!u.is_active) {
+      throw new Error('This account has been deactivated. Please contact your system administrator.');
+    }
+
+    const defaultPasswords: Record<string, string> = {
+      'superadmin': 'Admin@123',
+      'finance': 'Finance@123',
+      'itadmin': 'It@123',
+      'manager': 'Manager@123'
+    };
+
+    const expectedPassword =
+      this.db.userPasswords?.[u.id] ||
+      this.db.userPasswords?.[u.username.toLowerCase()] ||
+      this.db.userPasswords?.[u.email.toLowerCase()] ||
+      defaultPasswords[u.username.toLowerCase()] ||
+      'Admin@123';
+
+    if (rawPass !== expectedPassword) {
+      throw new Error('Invalid username or password. Please verify your credentials.');
+    }
+
+    const token = `mock-token-${u.id}-${Date.now()}`;
+    return { token, user: u };
   }
 
   async getCurrentUser(): Promise<{ user: User }> {
@@ -319,26 +383,41 @@ class MockBackendService {
     return [...this.db.users];
   }
 
-  async createUser(data: Partial<User>): Promise<User> {
+  async createUser(data: Partial<User> & { password?: string }): Promise<User> {
     const id = Math.max(0, ...this.db.users.map(u => u.id)) + 1;
+    const username = (data.username || `user_${id}`).trim();
     const newUser: User = {
       id,
-      username: data.username || `user_${id}`,
-      email: data.email || `user_${id}@red.com.pk`,
-      full_name: data.full_name || 'New Staff Member',
+      username,
+      email: (data.email || `${username}@red.com.pk`).trim(),
+      full_name: (data.full_name || 'New Staff Member').trim(),
       role: data.role || 'it_entry',
-      is_active: true,
+      is_active: data.is_active !== undefined ? data.is_active : true,
       created_at: new Date().toISOString()
     };
     this.db.users.push(newUser);
+
+    if (!this.db.userPasswords) this.db.userPasswords = {};
+    const pwd = (data.password || 'Red@123456').trim();
+    this.db.userPasswords[id] = pwd;
+    this.db.userPasswords[username.toLowerCase()] = pwd;
+    this.db.userPasswords[newUser.email.toLowerCase()] = pwd;
+
     this.save();
     return newUser;
   }
 
-  async updateUser(id: number, data: Partial<User>): Promise<User> {
+  async updateUser(id: number, data: Partial<User> & { password?: string }): Promise<User> {
     const idx = this.db.users.findIndex(u => u.id === id);
     if (idx !== -1) {
       this.db.users[idx] = { ...this.db.users[idx], ...data };
+      if (data.password && data.password.trim()) {
+        const cleanPwd = data.password.trim();
+        if (!this.db.userPasswords) this.db.userPasswords = {};
+        this.db.userPasswords[id] = cleanPwd;
+        this.db.userPasswords[this.db.users[idx].username.toLowerCase()] = cleanPwd;
+        this.db.userPasswords[this.db.users[idx].email.toLowerCase()] = cleanPwd;
+      }
       this.save();
       return this.db.users[idx];
     }
@@ -351,8 +430,37 @@ class MockBackendService {
     return { success: true };
   }
 
-  async resetUserPassword(_id: number, _pwd: string): Promise<{ success: boolean; message: string }> {
-    return { success: true, message: 'Password updated successfully' };
+  async resetUserPassword(id: number, pwd: string): Promise<{ success: boolean; message: string }> {
+    const user = this.db.users.find(u => u.id === id);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    const cleanPwd = (pwd || '').trim();
+    if (cleanPwd.length < 6) {
+      throw new Error('Password must be at least 6 characters long.');
+    }
+
+    if (!this.db.userPasswords) {
+      this.db.userPasswords = {};
+    }
+    this.db.userPasswords[user.id] = cleanPwd;
+    this.db.userPasswords[user.username.toLowerCase()] = cleanPwd;
+    this.db.userPasswords[user.email.toLowerCase()] = cleanPwd;
+
+    // Record audit log
+    const auditId = Math.max(0, ...this.db.auditLogs.map(a => a.id)) + 1;
+    this.db.auditLogs.unshift({
+      id: auditId,
+      user_name: 'System Administrator',
+      action: 'PASSWORD_RESET',
+      entity_type: 'User',
+      entity_id: String(user.id),
+      notes: `Password updated for user @${user.username} (${user.full_name})`,
+      timestamp: new Date().toISOString()
+    });
+
+    this.save();
+    return { success: true, message: `Password for @${user.username} updated successfully` };
   }
 
   async changeUserRole(id: number, role: any): Promise<{ success: boolean; user: User }> {
