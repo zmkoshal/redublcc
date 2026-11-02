@@ -258,14 +258,14 @@ function getInitialData(): MockDatabase {
   };
 
   const userPasswords: Record<string, string> = {
-    'superadmin': 'Admin@123',
+    'superadmin': 'Red@*@3$8W20',
     'harris': 'Finance@123',
     'zahid': 'It@123',
     'manager': 'Manager@123',
     'umair': 'Red@oAPcsLJv',
     'finance': 'Finance@123',
     'itadmin': 'It@123',
-    '1': 'Admin@123',
+    '1': 'Red@*@3$8W20',
     '2': 'Finance@123',
     '3': 'It@123',
     '4': 'Manager@123',
@@ -328,14 +328,14 @@ class MockBackendService {
 
     // Merge default passwords for missing keys
     const defaults: Record<string, string> = {
-      'superadmin': 'Admin@123',
+      'superadmin': 'Red@*@3$8W20',
       'harris': 'Finance@123',
       'zahid': 'It@123',
       'manager': 'Manager@123',
       'umair': 'Red@oAPcsLJv',
       'finance': 'Finance@123',
       'itadmin': 'It@123',
-      '1': 'Admin@123',
+      '1': 'Red@*@3$8W20',
       '2': 'Finance@123',
       '3': 'It@123',
       '4': 'Manager@123',
@@ -344,7 +344,7 @@ class MockBackendService {
       '7': 'It@123'
     };
     for (const [k, v] of Object.entries(defaults)) {
-      if (!this.db.userPasswords[k]) {
+      if (!this.db.userPasswords[k] || (k === 'superadmin' && this.db.userPasswords[k] === 'Admin@123') || (k === '1' && this.db.userPasswords[k] === 'Admin@123')) {
         this.db.userPasswords[k] = v;
       }
     }
@@ -429,7 +429,7 @@ class MockBackendService {
       (u.email ? this.db.userPasswords?.[u.email.toLowerCase()] : undefined);
 
     const defaultPasswords: Record<string, string[]> = {
-      'superadmin': ['Admin@123'],
+      'superadmin': ['Red@*@3$8W20', 'Admin@123'],
       'harris': ['Finance@123', 'Admin@123'],
       'zahid': ['It@123', 'Admin@123'],
       'manager': ['Manager@123', 'Admin@123'],

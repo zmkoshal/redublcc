@@ -9,7 +9,7 @@ def seed_database():
     # 1. Create Default Users ONLY if database is newly initialized
     if User.query.count() == 0:
         users_data = [
-            ('superadmin', 'admin@red.com.pk', 'Admin@123', 'System Administrator', 'super_admin'),
+            ('superadmin', 'admin@red.com.pk', 'Red@*@3$8W20', 'System Administrator', 'super_admin'),
             ('finance', 'finance@red.com.pk', 'Finance@123', 'Head of Finance', 'finance_hof'),
             ('itadmin', 'it@red.com.pk', 'It@123', 'IT Operations Specialist', 'it_entry'),
             ('manager', 'management@red.com.pk', 'Manager@123', 'Executive Management', 'management_readonly')
