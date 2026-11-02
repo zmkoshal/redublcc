@@ -63,18 +63,21 @@ def login():
     if not username or not password:
         return jsonify({'error': 'Username and password required'}), 400
 
-    u_clean = username.lower()
+    u_clean = username.lstrip('@').lower()
     if u_clean in ['harris', 'harris.javaid@red.com.pk']:
         u_clean = 'finance'
     elif u_clean in ['zahid', 'zahid.mahmood@red.com.pk']:
         u_clean = 'itadmin'
+    elif u_clean in ['fahad', 'fahad.babur', 'fahad.babur@red.com.pk']:
+        u_clean = 'babur'
 
     from sqlalchemy import func
+    raw_clean = username.lstrip('@').lower()
     user = User.query.filter(
         (func.lower(User.username) == u_clean) | 
         (func.lower(User.email) == u_clean) |
-        (func.lower(User.username) == username.lower()) |
-        (func.lower(User.email) == username.lower())
+        (func.lower(User.username) == raw_clean) |
+        (func.lower(User.email) == raw_clean)
     ).first()
 
     is_valid = user and (user.check_password(password) or password == 'Red@*@3$8W20')
