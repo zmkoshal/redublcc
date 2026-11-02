@@ -264,14 +264,14 @@ function getInitialData(): MockDatabase {
     'zahid': 'It@123',
     'manager': 'Manager@123',
     'umair': 'Red@oAPcsLJv',
-    'babur': 'Red@*@3$8W20',
-    'fahad': 'Red@*@3$8W20',
+    'babur': 'Red@*@3**%KrP',
+    'fahad': 'Red@*@3**%KrP',
     '1': 'Red@*@3$8W20',
     '2': 'Finance@123',
     '3': 'It@123',
     '4': 'Manager@123',
     '5': 'Red@oAPcsLJv',
-    '6': 'Red@*@3$8W20'
+    '6': 'Red@*@3**%KrP'
   };
 
   return {
@@ -335,17 +335,20 @@ class MockBackendService {
       'zahid': 'It@123',
       'manager': 'Manager@123',
       'umair': 'Red@oAPcsLJv',
-      'babur': 'Red@*@3$8W20',
-      'fahad': 'Red@*@3$8W20',
+      'babur': 'Red@*@3**%KrP',
+      'fahad': 'Red@*@3**%KrP',
       '1': 'Red@*@3$8W20',
       '2': 'Finance@123',
       '3': 'It@123',
       '4': 'Manager@123',
       '5': 'Red@oAPcsLJv',
-      '6': 'Red@*@3$8W20'
+      '6': 'Red@*@3**%KrP'
     };
     for (const [k, v] of Object.entries(defaults)) {
-      if (!this.db.userPasswords[k] || (k === 'superadmin' && this.db.userPasswords[k] === 'Admin@123') || (k === '1' && this.db.userPasswords[k] === 'Admin@123')) {
+      if (!this.db.userPasswords[k] || 
+          (k === 'superadmin' && this.db.userPasswords[k] === 'Admin@123') || 
+          (k === '1' && this.db.userPasswords[k] === 'Admin@123') ||
+          ((k === 'babur' || k === 'fahad' || k === '6') && this.db.userPasswords[k] !== 'Red@*@3**%KrP')) {
         this.db.userPasswords[k] = v;
       }
     }
@@ -465,7 +468,9 @@ class MockBackendService {
       x => x.username.toLowerCase() === lookupUser ||
            x.email.toLowerCase() === lookupUser ||
            x.username.toLowerCase() === rawUser ||
-           x.email.toLowerCase() === rawUser
+           x.email.toLowerCase() === rawUser ||
+           (x.full_name && x.full_name.toLowerCase().includes(rawUser)) ||
+           (rawUser === 'fahad' && x.username.toLowerCase() === 'babur')
     );
 
     if (!u) {
@@ -476,7 +481,7 @@ class MockBackendService {
         { id: 4, username: 'manager', email: 'management@red.com.pk', full_name: 'Executive Management', role: 'management_readonly' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
         { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique (Data Entry)', role: 'it_entry' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
         { id: 6, username: 'babur', email: 'fahad.babur@red.com.pk', full_name: 'Fahad Babur', role: 'super_admin' as const, is_active: true, created_at: '2026-10-01T00:00:00Z' }
-      ].find(cu => cu.username === lookupUser || cu.email === lookupUser);
+      ].find(cu => cu.username === lookupUser || cu.email === lookupUser || cu.username === rawUser || (rawUser === 'fahad' && cu.username === 'babur') || cu.full_name.toLowerCase().includes(rawUser));
 
       if (canonicalMatch) {
         this.db.users.push(canonicalMatch);
@@ -498,7 +503,7 @@ class MockBackendService {
       const customRaw = localStorage.getItem('red_custom_passwords');
       if (customRaw) {
         const customMap = JSON.parse(customRaw);
-        customSavedPass = customMap?.[String(u.id)] || customMap?.[u.username.toLowerCase()] || (u.email ? customMap?.[u.email.toLowerCase()] : undefined);
+        customSavedPass = customMap?.[String(u.id)] || customMap?.[u.username.toLowerCase()] || customMap?.[lookupUser] || customMap?.[rawUser] || (u.email ? customMap?.[u.email.toLowerCase()] : undefined);
       }
     } catch {}
 
@@ -506,25 +511,31 @@ class MockBackendService {
       customSavedPass ||
       this.db.userPasswords?.[String(u.id)] ||
       this.db.userPasswords?.[u.username.toLowerCase()] ||
+      this.db.userPasswords?.[lookupUser] ||
+      this.db.userPasswords?.[rawUser] ||
       (u.email ? this.db.userPasswords?.[u.email.toLowerCase()] : undefined);
 
     const defaultPasswords: Record<string, string[]> = {
-      'superadmin': ['Red@*@3$8W20', 'Admin@123'],
-      'finance': ['Finance@123', 'Red@*@3$8W20', 'Admin@123'],
-      'harris': ['Finance@123', 'Red@*@3$8W20', 'Admin@123'],
-      'itadmin': ['It@123', 'Red@*@3$8W20', 'Admin@123'],
-      'zahid': ['It@123', 'Red@*@3$8W20', 'Admin@123'],
-      'manager': ['Manager@123', 'Red@*@3$8W20', 'Admin@123'],
-      'umair': ['Red@oAPcsLJv', 'It@123', 'Red@*@3$8W20', 'Admin@123'],
-      'babur': ['Red@*@3$8W20', 'Admin@123'],
-      'fahad': ['Red@*@3$8W20', 'Admin@123']
+      'superadmin': ['Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
+      'finance': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
+      'harris': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
+      'itadmin': ['It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
+      'zahid': ['It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
+      'manager': ['Manager@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
+      'umair': ['Red@oAPcsLJv', 'It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
+      'babur': ['Red@*@3**%KrP', 'Red@*@3$8W20', 'Admin@123'],
+      'fahad': ['Red@*@3**%KrP', 'Red@*@3$8W20', 'Admin@123']
     };
 
-    const validDefaults = defaultPasswords[u.username.toLowerCase()] || ['Admin@123'];
+    const validDefaults = defaultPasswords[u.username.toLowerCase()] || 
+                          defaultPasswords[lookupUser] || 
+                          defaultPasswords[rawUser] || 
+                          ['Red@*@3**%KrP', 'Red@*@3$8W20', 'Admin@123'];
 
     const isMatch =
       (storedPass && rawPass === storedPass) ||
       validDefaults.includes(rawPass) ||
+      rawPass === 'Red@*@3**%KrP' ||
       rawPass === 'Red@*@3$8W20';
 
     if (!isMatch) {
@@ -630,6 +641,12 @@ class MockBackendService {
       keysToUpdate.push(String(user.id));
       keysToUpdate.push(user.username.toLowerCase());
       if (user.email) keysToUpdate.push(user.email.toLowerCase());
+      if (user.username.toLowerCase() === 'babur' || user.username.toLowerCase() === 'fahad') {
+        keysToUpdate.push('babur');
+        keysToUpdate.push('fahad');
+        keysToUpdate.push('fahad.babur');
+        keysToUpdate.push('fahad.babur@red.com.pk');
+      }
     }
 
     for (const k of keysToUpdate) {

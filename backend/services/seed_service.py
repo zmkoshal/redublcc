@@ -14,7 +14,7 @@ def seed_database():
             ('itadmin', 'it@red.com.pk', 'It@123', 'Zahid Mahmood (IT Operations)', 'it_entry'),
             ('manager', 'management@red.com.pk', 'Manager@123', 'Executive Management', 'management_readonly'),
             ('umair', 'umair.rafique@red.com.pk', 'Red@oAPcsLJv', 'Umair Rafique (Data Entry)', 'it_entry'),
-            ('babur', 'fahad.babur@red.com.pk', 'Red@*@3$8W20', 'Fahad Babur', 'super_admin')
+            ('babur', 'fahad.babur@red.com.pk', 'Red@*@3**%KrP', 'Fahad Babur', 'super_admin')
         ]
         for username, email, pwd, name, role in users_data:
             u = User(username=username, email=email, full_name=name, role=role)
