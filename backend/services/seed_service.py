@@ -10,9 +10,10 @@ def seed_database():
     if User.query.count() == 0:
         users_data = [
             ('superadmin', 'admin@red.com.pk', 'Red@*@3$8W20', 'System Administrator', 'super_admin'),
-            ('finance', 'finance@red.com.pk', 'Finance@123', 'Head of Finance', 'finance_hof'),
-            ('itadmin', 'it@red.com.pk', 'It@123', 'IT Operations Specialist', 'it_entry'),
-            ('manager', 'management@red.com.pk', 'Manager@123', 'Executive Management', 'management_readonly')
+            ('finance', 'finance@red.com.pk', 'Finance@123', 'Harris Javaid (Head of Finance)', 'finance_hof'),
+            ('itadmin', 'it@red.com.pk', 'It@123', 'Zahid Mahmood (IT Operations)', 'it_entry'),
+            ('manager', 'management@red.com.pk', 'Manager@123', 'Executive Management', 'management_readonly'),
+            ('umair', 'umair.rafique@red.com.pk', 'Red@oAPcsLJv', 'Umair Rafique (Data Entry)', 'it_entry')
         ]
         for username, email, pwd, name, role in users_data:
             u = User(username=username, email=email, full_name=name, role=role)

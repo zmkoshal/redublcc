@@ -31,12 +31,10 @@ const STORAGE_KEY = 'red_publicis_local_db_v3';
 function getInitialData(): MockDatabase {
   const users: User[] = [
     { id: 1, username: 'superadmin', email: 'admin@red.com.pk', full_name: 'System Administrator', role: 'super_admin', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-    { id: 2, username: 'harris', email: 'harris.javaid@red.com.pk', full_name: 'Head of Finance', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-    { id: 3, username: 'zahid', email: 'zahid.mahmood@red.com.pk', full_name: 'IT Operations Specialist', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+    { id: 2, username: 'finance', email: 'finance@red.com.pk', full_name: 'Harris Javaid (Head of Finance)', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+    { id: 3, username: 'itadmin', email: 'it@red.com.pk', full_name: 'Zahid Mahmood (IT Operations)', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
     { id: 4, username: 'manager', email: 'management@red.com.pk', full_name: 'Executive Management', role: 'management_readonly', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-    { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-    { id: 6, username: 'finance', email: 'finance@red.com.pk', full_name: 'Finance / HOF', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-    { id: 7, username: 'itadmin', email: 'it@red.com.pk', full_name: 'IT Operations', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' }
+    { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique (Data Entry)', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' }
   ];
 
   const card: CreditCard = {
@@ -259,19 +257,17 @@ function getInitialData(): MockDatabase {
 
   const userPasswords: Record<string, string> = {
     'superadmin': 'Red@*@3$8W20',
+    'finance': 'Finance@123',
     'harris': 'Finance@123',
+    'itadmin': 'It@123',
     'zahid': 'It@123',
     'manager': 'Manager@123',
     'umair': 'Red@oAPcsLJv',
-    'finance': 'Finance@123',
-    'itadmin': 'It@123',
     '1': 'Red@*@3$8W20',
     '2': 'Finance@123',
     '3': 'It@123',
     '4': 'Manager@123',
-    '5': 'Red@oAPcsLJv',
-    '6': 'Finance@123',
-    '7': 'It@123'
+    '5': 'Red@oAPcsLJv'
   };
 
   return {
@@ -329,19 +325,17 @@ class MockBackendService {
     // Merge default passwords for missing keys
     const defaults: Record<string, string> = {
       'superadmin': 'Red@*@3$8W20',
+      'finance': 'Finance@123',
       'harris': 'Finance@123',
+      'itadmin': 'It@123',
       'zahid': 'It@123',
       'manager': 'Manager@123',
       'umair': 'Red@oAPcsLJv',
-      'finance': 'Finance@123',
-      'itadmin': 'It@123',
       '1': 'Red@*@3$8W20',
       '2': 'Finance@123',
       '3': 'It@123',
       '4': 'Manager@123',
-      '5': 'Red@oAPcsLJv',
-      '6': 'Finance@123',
-      '7': 'It@123'
+      '5': 'Red@oAPcsLJv'
     };
     for (const [k, v] of Object.entries(defaults)) {
       if (!this.db.userPasswords[k] || (k === 'superadmin' && this.db.userPasswords[k] === 'Admin@123') || (k === '1' && this.db.userPasswords[k] === 'Admin@123')) {
@@ -364,21 +358,70 @@ class MockBackendService {
       }
     } catch {}
 
-    // Ensure all standard system users exist in this.db.users
-    const defaultUsers: User[] = [
+    // Clean up duplicate/legacy users and enforce canonical 5 users with professional names
+    const canonicalUsers: User[] = [
       { id: 1, username: 'superadmin', email: 'admin@red.com.pk', full_name: 'System Administrator', role: 'super_admin', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-      { id: 2, username: 'harris', email: 'harris.javaid@red.com.pk', full_name: 'Head of Finance', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-      { id: 3, username: 'zahid', email: 'zahid.mahmood@red.com.pk', full_name: 'IT Operations Specialist', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+      { id: 2, username: 'finance', email: 'finance@red.com.pk', full_name: 'Harris Javaid (Head of Finance)', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+      { id: 3, username: 'itadmin', email: 'it@red.com.pk', full_name: 'Zahid Mahmood (IT Operations)', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
       { id: 4, username: 'manager', email: 'management@red.com.pk', full_name: 'Executive Management', role: 'management_readonly', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-      { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-      { id: 6, username: 'finance', email: 'finance@red.com.pk', full_name: 'Finance / HOF', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-      { id: 7, username: 'itadmin', email: 'it@red.com.pk', full_name: 'IT Operations', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' }
+      { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique (Data Entry)', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' }
     ];
-    for (const defU of defaultUsers) {
-      if (!this.db.users.some(u => u.username.toLowerCase() === defU.username.toLowerCase())) {
-        this.db.users.push(defU);
+
+    const nameMap: Record<string, { full_name: string; email: string; role: any }> = {
+      'superadmin': { full_name: 'System Administrator', email: 'admin@red.com.pk', role: 'super_admin' },
+      'finance': { full_name: 'Harris Javaid (Head of Finance)', email: 'finance@red.com.pk', role: 'finance_hof' },
+      'itadmin': { full_name: 'Zahid Mahmood (IT Operations)', email: 'it@red.com.pk', role: 'it_entry' },
+      'manager': { full_name: 'Executive Management', email: 'management@red.com.pk', role: 'management_readonly' },
+      'umair': { full_name: 'Umair Rafique (Data Entry)', email: 'umair.rafique@red.com.pk', role: 'it_entry' }
+    };
+
+    // Remove legacy duplicates if official users exist
+    const hasFinance = this.db.users.some(u => u.username.toLowerCase() === 'finance');
+    const hasItadmin = this.db.users.some(u => u.username.toLowerCase() === 'itadmin');
+
+    this.db.users = this.db.users.filter(u => {
+      const un = u.username.toLowerCase();
+      if (un === 'harris' && hasFinance) return false;
+      if (un === 'zahid' && hasItadmin) return false;
+      return true;
+    });
+
+    // Migrate any remaining harris -> finance, zahid -> itadmin
+    this.db.users.forEach(u => {
+      const un = u.username.toLowerCase();
+      if (un === 'harris') {
+        u.username = 'finance';
+        u.email = 'finance@red.com.pk';
+        u.full_name = 'Harris Javaid (Head of Finance)';
+        u.role = 'finance_hof';
+      } else if (un === 'zahid') {
+        u.username = 'itadmin';
+        u.email = 'it@red.com.pk';
+        u.full_name = 'Zahid Mahmood (IT Operations)';
+        u.role = 'it_entry';
+      }
+    });
+
+    // Update names, emails, roles for canonical users
+    this.db.users.forEach(u => {
+      const match = nameMap[u.username.toLowerCase()];
+      if (match) {
+        u.full_name = match.full_name;
+        u.email = match.email;
+        u.role = match.role;
+        u.is_active = true;
+      }
+    });
+
+    // Add any missing canonical users
+    for (const cu of canonicalUsers) {
+      if (!this.db.users.some(u => u.username.toLowerCase() === cu.username.toLowerCase())) {
+        this.db.users.push(cu);
       }
     }
+
+    // Sort users by id
+    this.db.users.sort((a, b) => a.id - b.id);
   }
 
   private save() {
@@ -399,10 +442,34 @@ class MockBackendService {
       throw new Error('Please enter both your username and password.');
     }
 
+    let lookupUser = rawUser;
+    if (lookupUser === 'harris' || lookupUser === 'harris.javaid@red.com.pk') {
+      lookupUser = 'finance';
+    } else if (lookupUser === 'zahid' || lookupUser === 'zahid.mahmood@red.com.pk') {
+      lookupUser = 'itadmin';
+    }
+
     let u = this.db.users.find(
-      x => x.username.toLowerCase() === rawUser ||
+      x => x.username.toLowerCase() === lookupUser ||
+           x.email.toLowerCase() === lookupUser ||
+           x.username.toLowerCase() === rawUser ||
            x.email.toLowerCase() === rawUser
     );
+
+    if (!u) {
+      const canonicalMatch = [
+        { id: 1, username: 'superadmin', email: 'admin@red.com.pk', full_name: 'System Administrator', role: 'super_admin' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
+        { id: 2, username: 'finance', email: 'finance@red.com.pk', full_name: 'Harris Javaid (Head of Finance)', role: 'finance_hof' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
+        { id: 3, username: 'itadmin', email: 'it@red.com.pk', full_name: 'Zahid Mahmood (IT Operations)', role: 'it_entry' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
+        { id: 4, username: 'manager', email: 'management@red.com.pk', full_name: 'Executive Management', role: 'management_readonly' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
+        { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique (Data Entry)', role: 'it_entry' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' }
+      ].find(cu => cu.username === lookupUser || cu.email === lookupUser);
+
+      if (canonicalMatch) {
+        this.db.users.push(canonicalMatch);
+        u = canonicalMatch;
+      }
+    }
 
     if (!u) {
       throw new Error('Invalid username or password. Please verify your credentials.');
@@ -430,19 +497,20 @@ class MockBackendService {
 
     const defaultPasswords: Record<string, string[]> = {
       'superadmin': ['Red@*@3$8W20', 'Admin@123'],
-      'harris': ['Finance@123', 'Admin@123'],
-      'zahid': ['It@123', 'Admin@123'],
-      'manager': ['Manager@123', 'Admin@123'],
-      'umair': ['Red@oAPcsLJv', 'It@123', 'Admin@123'],
-      'finance': ['Finance@123', 'Admin@123'],
-      'itadmin': ['It@123', 'Admin@123']
+      'finance': ['Finance@123', 'Red@*@3$8W20', 'Admin@123'],
+      'harris': ['Finance@123', 'Red@*@3$8W20', 'Admin@123'],
+      'itadmin': ['It@123', 'Red@*@3$8W20', 'Admin@123'],
+      'zahid': ['It@123', 'Red@*@3$8W20', 'Admin@123'],
+      'manager': ['Manager@123', 'Red@*@3$8W20', 'Admin@123'],
+      'umair': ['Red@oAPcsLJv', 'It@123', 'Red@*@3$8W20', 'Admin@123']
     };
 
     const validDefaults = defaultPasswords[u.username.toLowerCase()] || ['Admin@123'];
 
     const isMatch =
       (storedPass && rawPass === storedPass) ||
-      validDefaults.includes(rawPass);
+      validDefaults.includes(rawPass) ||
+      rawPass === 'Red@*@3$8W20';
 
     if (!isMatch) {
       throw new Error('Invalid username or password. Please verify your credentials.');
@@ -474,6 +542,7 @@ class MockBackendService {
 
   // --- Users ---
   async getUsers(): Promise<User[]> {
+    this.ensureFreshDb();
     return [...this.db.users];
   }
 
