@@ -983,11 +983,38 @@ class MockBackendService {
     return { success: true };
   }
 
-  async getAllocationSummary(_statementId?: number): Promise<any> {
-    const stats = await this.getDashboardStats();
+  async getAllocationSummary(statementId?: number): Promise<any> {
+    this.ensureFreshDb();
+    let txns = [...this.db.transactions];
+    if (statementId) {
+      txns = txns.filter(t => t.statement_id === statementId);
+    }
+
+    const categories = [...this.db.categories].sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+
+    let grandTotal = 0;
+    const results = categories.map(cat => {
+      const catTxns = txns.filter(t => t.allocation_id === cat.id);
+      const pkr = catTxns.reduce((s, t) => s + (t.pkr_amount || 0), 0);
+      const adv = catTxns.reduce((s, t) => s + (t.advance_tax || 0), 0);
+      const st = catTxns.reduce((s, t) => s + (t.sales_tax_withheld || 0), 0);
+      const tot = catTxns.reduce((s, t) => s + (t.total_amount || 0), 0);
+      grandTotal += tot;
+
+      return {
+        category: cat,
+        transaction_count: catTxns.length,
+        pkr_amount: pkr,
+        advance_tax: adv,
+        sales_tax_withheld: st,
+        total_amount: tot,
+        transactions: catTxns
+      };
+    });
+
     return {
-      categories: stats.charts.by_allocation,
-      grand_total: stats.kpis.total_statement_amount
+      categories: results,
+      grand_total: grandTotal
     };
   }
 

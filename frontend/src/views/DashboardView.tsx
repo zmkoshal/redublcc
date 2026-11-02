@@ -8,7 +8,8 @@ import {
   Clock,
   Layers,
   ArrowUpRight,
-  ShieldAlert
+  ShieldAlert,
+  PieChart as PieChartIcon
 } from 'lucide-react';
 import { StatCard } from '../components/common/StatCard';
 import { api } from '../services/api';
@@ -91,6 +92,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, select
             </p>
           </div>
           <div className="flex flex-wrap gap-2.5">
+            <button
+              onClick={() => onNavigate('allocations')}
+              className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-xs font-bold shadow-md transition-all duration-150"
+            >
+              <PieChartIcon className="w-4 h-4" />
+              <span>Expense Allocations</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </button>
             <button
               onClick={() => onNavigate('transactions')}
               className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md transition-all duration-150"
@@ -193,9 +202,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, select
                 Distribution across RED, KKOP, PFDC and Personal accounts
               </p>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
-              Interactive
-            </span>
+            <button
+              onClick={() => onNavigate('allocations')}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/80 transition-all flex items-center space-x-1"
+            >
+              <span>Expense Allocations</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">

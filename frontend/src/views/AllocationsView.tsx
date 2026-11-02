@@ -135,9 +135,10 @@ export const AllocationsView: React.FC = () => {
 
       {/* Categories Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {allocationsSummary.map((item: any) => {
-          const cat = item.category;
-          const share = grandTotal > 0 ? ((item.total_amount / grandTotal) * 100).toFixed(1) : '0';
+        {allocationsSummary.map((item: any, idx: number) => {
+          const cat = item.category || { id: idx, name: item.name || 'Unallocated', code: item.code || 'OTHER', entity_type: 'Company' };
+          const totalAmount = item.total_amount !== undefined ? item.total_amount : (item.value || 0);
+          const share = grandTotal > 0 ? ((totalAmount / grandTotal) * 100).toFixed(1) : '0';
           const isSelected = activeDrillDown?.category?.id === cat.id;
 
           const getIcon = () => {
@@ -196,12 +197,12 @@ export const AllocationsView: React.FC = () => {
                     Total Incurred:
                   </span>
                   <span className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
-                    {formatPKR(item.total_amount)}
+                    {formatPKR(totalAmount)}
                   </span>
                 </div>
 
                 <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
-                  <span>{item.transaction_count} Transactions</span>
+                  <span>{item.transaction_count || 0} Transactions</span>
                   <span className="font-bold text-blue-600 dark:text-blue-400">{share}% of Total</span>
                 </div>
 
@@ -235,7 +236,7 @@ export const AllocationsView: React.FC = () => {
             <div className="flex items-center space-x-2">
               <Receipt className="w-5 h-5 text-blue-200" />
               <h3 className="text-sm font-bold tracking-tight">
-                Underlying Transactions for: {activeDrillDown.category.name}
+                Underlying Transactions for: {activeDrillDown.category?.name || 'Category'}
               </h3>
             </div>
             <button
@@ -260,7 +261,7 @@ export const AllocationsView: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                {activeDrillDown.transactions.map((t: any) => (
+                {(activeDrillDown.transactions || []).map((t: any) => (
                   <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                     <td className="py-2.5 px-4 text-slate-500">{t.transaction_date}</td>
                     <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-white">
