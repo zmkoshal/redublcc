@@ -9,7 +9,12 @@ import {
   Layers,
   ArrowUpRight,
   ShieldAlert,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Globe,
+  Receipt,
+  Sparkles,
+  Percent,
+  Building2
 } from 'lucide-react';
 import { StatCard } from '../components/common/StatCard';
 import { api } from '../services/api';
@@ -24,7 +29,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
   CartesianGrid
 } from 'recharts';
 
@@ -33,7 +37,58 @@ interface DashboardViewProps {
   selectedStatementId?: number | null;
 }
 
-const COLORS = ['#2563EB', '#0D9488', '#D97706', '#9333EA', '#DC2626', '#4F46E5', '#059669', '#E11D48'];
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#4F46E5', '#64748B'];
+
+const ALLOC_COLORS: Record<string, string> = {
+  'RED': '#3B82F6',
+  'KKOP': '#10B981',
+  'PFDC': '#F59E0B',
+  'SYED_HAMMAD': '#8B5CF6',
+  'OTHER_COMPANIES': '#06B6D4',
+  'OTHER_INDIVIDUALS': '#EC4899',
+  'OTHER': '#64748B'
+};
+
+const CustomDonutTooltip = ({ active, payload, formatter, total }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const val = Number(data.value || 0);
+    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0';
+    const color = data.payload?.fill || data.color || '#3B82F6';
+    return (
+      <div className="bg-slate-900/95 border border-slate-700/80 backdrop-blur-md rounded-xl p-3 shadow-2xl text-xs space-y-1">
+        <div className="flex items-center space-x-2">
+          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+          <p className="font-semibold text-slate-200">{data.name}</p>
+        </div>
+        <p className="font-bold text-white text-sm">
+          {formatter ? formatter(val) : `Rs. ${val.toLocaleString('en-PK')}`}
+        </p>
+        <p className="text-[11px] text-slate-400">
+          Share: <span className="font-bold text-emerald-400">{pct}%</span> of total
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomBarTooltip = ({ active, payload, label, formatter }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const val = Number(data.value || 0);
+    const title = label || data.payload?.merchant || data.payload?.name || data.name;
+    return (
+      <div className="bg-slate-900/95 border border-slate-700/80 backdrop-blur-md rounded-xl p-3 shadow-2xl text-xs space-y-1">
+        <p className="font-semibold text-slate-300">{title}</p>
+        <p className="font-bold text-white text-sm">
+          {formatter ? formatter(val) : `Rs. ${val.toLocaleString('en-PK')}`}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, selectedStatementId }) => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -73,6 +128,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, select
   }
 
   const { kpis, charts } = stats;
+  const totalAllocated = charts.by_allocation.reduce((sum, item) => sum + (item.value || 0), 0);
+  const totalFxPkr = charts.fx_vs_pkr.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const totalTaxAmount = charts.tax_breakdown.reduce((sum, item) => sum + (item.value || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -192,131 +250,312 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, select
       {/* Visual Analytics Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Chart 1: Expenses by Entity / Allocation */}
-        <div className="rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="rounded-2xl p-6 bg-slate-900/90 dark:bg-slate-900/90 border border-slate-800/90 shadow-xl backdrop-blur-md relative overflow-hidden group hover:border-slate-700 transition-all duration-300">
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-teal-400 opacity-80" />
+          
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Expenses by Company & Allocation
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Distribution across RED, KKOP, PFDC and Personal accounts
-              </p>
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-inner">
+                <Building2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white tracking-tight">
+                  Expenses by Company & Allocation
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Distribution across RED, KKOP, PFDC and Personal accounts
+                </p>
+              </div>
             </div>
             <button
               onClick={() => onNavigate('allocations')}
-              className="text-xs font-bold px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/80 transition-all flex items-center space-x-1"
+              className="text-xs font-bold px-3 py-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-300 hover:bg-blue-500/25 hover:text-white transition-all flex items-center space-x-1.5 shadow-sm"
             >
               <span>Expense Allocations</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={charts.by_allocation}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={4}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                >
-                  {charts.by_allocation.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: any) => formatPKR(Number(value))} />
-              </PieChart>
-            </ResponsiveContainer>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            {/* Donut Chart */}
+            <div className="md:col-span-6 h-56 relative flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={charts.by_allocation}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={56}
+                    outerRadius={82}
+                    paddingAngle={3}
+                    cornerRadius={4}
+                    dataKey="value"
+                  >
+                    {charts.by_allocation.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={ALLOC_COLORS[entry.code] || COLORS[index % COLORS.length]}
+                        stroke="#0f172a"
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomDonutTooltip formatter={formatPKR} total={totalAllocated} />} />
+                </PieChart>
+              </ResponsiveContainer>
+              
+              {/* Center Statistic Hole */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total</span>
+                <span className="text-xs font-extrabold text-white">{formatPKR(totalAllocated)}</span>
+              </div>
+            </div>
+
+            {/* Elegant Legend Pills */}
+            <div className="md:col-span-6 space-y-2 pr-1 max-h-56 overflow-y-auto">
+              {charts.by_allocation.map((item, idx) => {
+                const pct = totalAllocated > 0 ? ((item.value / totalAllocated) * 100).toFixed(0) : '0';
+                const color = ALLOC_COLORS[item.code] || COLORS[idx % COLORS.length];
+                const cleanName = item.name.replace('CHARGE TO ', '');
+                return (
+                  <div
+                    key={item.code || idx}
+                    onClick={() => onNavigate('allocations')}
+                    className="flex items-center justify-between p-2 rounded-xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800/80 hover:border-slate-700 transition-all cursor-pointer group/item text-xs"
+                  >
+                    <div className="flex items-center space-x-2.5 min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: color }} />
+                      <span className="font-semibold text-slate-200 truncate">{cleanName}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 shrink-0 pl-2">
+                      <span className="font-mono text-slate-300 font-medium">{formatPKR(item.value)}</span>
+                      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold" style={{ backgroundColor: `${color}20`, color }}>
+                        {pct}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
         {/* Chart 2: Top Merchants Spending */}
-        <div className="rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="rounded-2xl p-6 bg-slate-900/90 dark:bg-slate-900/90 border border-slate-800/90 shadow-xl backdrop-blur-md relative overflow-hidden group hover:border-slate-700 transition-all duration-300">
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-400 opacity-80" />
+
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Top Merchants & Subscriptions
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Highest expense vendors (GoDaddy, Google Workspace, OpenAI, etc.)
-              </p>
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-inner">
+                <Receipt className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white tracking-tight">
+                  Top Merchants & Subscriptions
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Highest expense vendors (GoDaddy, Google Workspace, OpenAI, etc.)
+                </p>
+              </div>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-              Top 8
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 shadow-sm flex items-center space-x-1">
+              <Sparkles className="w-3 h-3 text-emerald-400" />
+              <span>Top 8</span>
             </span>
           </div>
+
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={charts.by_merchant} layout="vertical" margin={{ left: 30, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis type="number" tickFormatter={(v) => `Rs. ${(v/1000).toFixed(0)}k`} />
-                <YAxis dataKey="merchant" type="category" width={110} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value: any) => formatPKR(Number(value))} />
-                <Bar dataKey="amount" fill="#3B82F6" radius={[0, 6, 6, 0]} />
+              <BarChart data={charts.by_merchant} layout="vertical" margin={{ left: 10, right: 30, top: 4, bottom: 4 }}>
+                <defs>
+                  <linearGradient id="vendorBarGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#2563EB" stopOpacity={0.85} />
+                    <stop offset="100%" stopColor="#38BDF8" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" opacity={0.3} />
+                <XAxis
+                  type="number"
+                  tickFormatter={(v) => `Rs. ${(v / 1000).toFixed(0)}k`}
+                  stroke="#64748B"
+                  tick={{ fontSize: 11, fill: '#94A3B8' }}
+                  axisLine={{ stroke: '#334155' }}
+                  tickLine={{ stroke: '#334155' }}
+                />
+                <YAxis
+                  dataKey="merchant"
+                  type="category"
+                  width={125}
+                  tick={{ fontSize: 11, fill: '#CBD5E1', fontWeight: 500 }}
+                  stroke="#64748B"
+                  axisLine={{ stroke: '#334155' }}
+                  tickLine={false}
+                />
+                <Tooltip content={<CustomBarTooltip formatter={formatPKR} />} />
+                <Bar
+                  dataKey="amount"
+                  fill="url(#vendorBarGrad)"
+                  radius={[0, 6, 6, 0]}
+                  barSize={14}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Chart 3: Tax & Bank Charges Breakdown */}
-        <div className="rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="rounded-2xl p-6 bg-slate-900/90 dark:bg-slate-900/90 border border-slate-800/90 shadow-xl backdrop-blur-md relative overflow-hidden group hover:border-slate-700 transition-all duration-300">
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-400 opacity-80" />
+
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Taxes & Statutory Fees Breakdown
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Advance Tax, Provincial ST, FED, and UBL Bank Charges
-              </p>
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shadow-inner">
+                <Percent className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white tracking-tight">
+                  Taxes & Statutory Fees Breakdown
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Advance Tax, Provincial ST, FED, and UBL Bank Charges
+                </p>
+              </div>
             </div>
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300">
+              Total: {formatPKR(totalTaxAmount)}
+            </span>
           </div>
+
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={charts.tax_breakdown}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tickFormatter={(v) => `Rs. ${(v/1000).toFixed(0)}k`} />
-                <Tooltip formatter={(value: any) => formatPKR(Number(value))} />
-                <Bar dataKey="value" fill="#8B5CF6" radius={[6, 6, 0, 0]} />
+              <BarChart data={charts.tax_breakdown} margin={{ top: 12, right: 16, left: 4, bottom: 8 }}>
+                <defs>
+                  <linearGradient id="taxBarGrad0" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#818CF8" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#4F46E5" stopOpacity={0.8} />
+                  </linearGradient>
+                  <linearGradient id="taxBarGrad1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#2DD4BF" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#0D9488" stopOpacity={0.8} />
+                  </linearGradient>
+                  <linearGradient id="taxBarGrad2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FBBF24" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#D97706" stopOpacity={0.8} />
+                  </linearGradient>
+                  <linearGradient id="taxBarGrad3" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#C084FC" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#9333EA" stopOpacity={0.8} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.3} />
+                <XAxis
+                  dataKey="name"
+                  stroke="#64748B"
+                  tick={{ fontSize: 10, fill: '#CBD5E1', fontWeight: 500 }}
+                  axisLine={{ stroke: '#334155' }}
+                  tickLine={{ stroke: '#334155' }}
+                />
+                <YAxis
+                  tickFormatter={(v) => `Rs. ${(v / 1000).toFixed(0)}k`}
+                  stroke="#64748B"
+                  tick={{ fontSize: 11, fill: '#94A3B8' }}
+                  axisLine={{ stroke: '#334155' }}
+                  tickLine={{ stroke: '#334155' }}
+                />
+                <Tooltip content={<CustomBarTooltip formatter={formatPKR} />} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={34}>
+                  {charts.tax_breakdown.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={`url(#taxBarGrad${index % 4})`} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Chart 4: Foreign Currency (USD) vs PKR */}
-        <div className="rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="rounded-2xl p-6 bg-slate-900/90 dark:bg-slate-900/90 border border-slate-800/90 shadow-xl backdrop-blur-md relative overflow-hidden group hover:border-slate-700 transition-all duration-300">
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 opacity-80" />
+
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Foreign Currency (USD) vs Direct PKR
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Analysis of international cloud tools vs local transactions
-              </p>
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-inner">
+                <Globe className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white tracking-tight">
+                  Foreign Currency (USD) vs Direct PKR
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Analysis of international cloud tools vs local transactions
+                </p>
+              </div>
             </div>
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300">
+              Currency Mix
+            </span>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={charts.fx_vs_pkr}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={85}
-                  dataKey="amount"
-                  nameKey="type"
-                  label={({ name, percent }) => `${name.split(' ')[0]} (${(percent * 100).toFixed(0)}%)`}
-                >
-                  <Cell fill="#0D9488" />
-                  <Cell fill="#3B82F6" />
-                </Pie>
-                <Tooltip formatter={(value: any) => formatPKR(Number(value))} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            {/* Donut Chart */}
+            <div className="md:col-span-6 h-56 relative flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={charts.fx_vs_pkr}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={56}
+                    outerRadius={82}
+                    paddingAngle={4}
+                    cornerRadius={4}
+                    dataKey="amount"
+                    nameKey="type"
+                  >
+                    <Cell fill="#06B6D4" stroke="#0f172a" strokeWidth={2} />
+                    <Cell fill="#3B82F6" stroke="#0f172a" strokeWidth={2} />
+                  </Pie>
+                  <Tooltip content={<CustomDonutTooltip formatter={formatPKR} total={totalFxPkr} />} />
+                </PieChart>
+              </ResponsiveContainer>
+
+              {/* Center Hole Currency Icon */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <Globe className="w-5 h-5 text-cyan-400 mb-0.5" />
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">FX Mix</span>
+              </div>
+            </div>
+
+            {/* Metric Cards */}
+            <div className="md:col-span-6 space-y-2.5 pr-1">
+              {charts.fx_vs_pkr.map((item, idx) => {
+                const pct = totalFxPkr > 0 ? ((item.amount / totalFxPkr) * 100).toFixed(0) : '0';
+                const isUsd = item.type.toLowerCase().includes('usd') || item.type.toLowerCase().includes('foreign');
+                const color = isUsd ? '#06B6D4' : '#3B82F6';
+                return (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-xl bg-slate-800/40 border border-slate-800/80 hover:border-slate-700 transition-all text-xs space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: color }} />
+                        <span className="font-bold text-slate-200">
+                          {isUsd ? 'USD International Spend' : 'Direct PKR Domestic'}
+                        </span>
+                      </div>
+                      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold" style={{ backgroundColor: `${color}20`, color }}>
+                        {pct}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-0.5">
+                      <span className="text-[11px] text-slate-400">Total volume</span>
+                      <span className="font-mono text-white font-bold">{formatPKR(item.amount)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

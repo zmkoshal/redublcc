@@ -707,6 +707,7 @@ class MockBackendService {
     const totalAdv = txs.reduce((sum, t) => sum + (t.advance_tax || 0), 0);
     const totalSt = txs.reduce((sum, t) => sum + (t.sales_tax_withheld || 0), 0);
     const totalBank = txs.reduce((sum, t) => sum + (t.bank_charges || 0), 0);
+    const totalFed = txs.reduce((sum, t) => sum + (t.fed_amount || 0), 0);
 
     const allocTotals: Record<string, number> = {};
     for (const t of txs) {
@@ -732,6 +733,10 @@ class MockBackendService {
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 8);
 
+    const isForeign = (t: any) => (t.usd_amount && Number(t.usd_amount) > 0) || (t.advance_tax && Number(t.advance_tax) > 0);
+    const fxAmount = txs.filter(isForeign).reduce((s, t) => s + (t.pkr_amount || t.total_amount || 0), 0);
+    const directAmount = txs.filter(t => !isForeign(t)).reduce((s, t) => s + (t.pkr_amount || t.total_amount || 0), 0);
+
     return {
       kpis: {
         total_statement_amount: totalTx,
@@ -751,11 +756,13 @@ class MockBackendService {
         by_merchant: byMerchant,
         tax_breakdown: [
           { name: 'Advance Tax (FBR)', value: totalAdv },
-          { name: 'Provincial Sales Tax', value: totalSt }
-        ],
+          { name: 'Provincial Sales Tax', value: totalSt },
+          { name: 'Bank Charges & SMS', value: totalBank },
+          { name: 'Federal Excise (FED)', value: totalFed }
+        ].filter(x => x.value > 0),
         fx_vs_pkr: [
-          { type: 'USD Converted', amount: txs.filter(t => (t.usd_amount || 0) > 0).reduce((s, t) => s + t.pkr_amount, 0) },
-          { type: 'Direct PKR', amount: txs.filter(t => !t.usd_amount).reduce((s, t) => s + t.pkr_amount, 0) }
+          { type: 'Foreign USD', amount: fxAmount },
+          { type: 'Direct PKR', amount: directAmount }
         ],
         paid_vs_unpaid: [
           { status: 'Paid', amount: totalPaid },

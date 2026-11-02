@@ -72,11 +72,11 @@ def get_dashboard_stats():
     chart_taxes = [c for c in chart_taxes if c['value'] > 0]
 
     # Chart 4: FX vs Direct PKR
-    fx_total = sum(t.pkr_amount or Decimal('0.0') for t in txns if t.usd_amount and t.usd_amount > 0)
-    direct_pkr_total = sum(t.pkr_amount or Decimal('0.0') for t in txns if not t.usd_amount or t.usd_amount == 0)
+    fx_total = sum(t.pkr_amount or Decimal('0.0') for t in txns if (t.usd_amount and t.usd_amount > 0) or (t.advance_tax and t.advance_tax > 0))
+    direct_pkr_total = sum(t.pkr_amount or Decimal('0.0') for t in txns if not ((t.usd_amount and t.usd_amount > 0) or (t.advance_tax and t.advance_tax > 0)))
     chart_fx_vs_pkr = [
-        {'type': 'Foreign Currency (USD)', 'amount': float(fx_total)},
-        {'type': 'Direct PKR Expenses', 'amount': float(direct_pkr_total)}
+        {'type': 'Foreign USD', 'amount': float(fx_total)},
+        {'type': 'Direct PKR', 'amount': float(direct_pkr_total)}
     ]
 
     # Chart 5: Paid vs Unpaid Statements
