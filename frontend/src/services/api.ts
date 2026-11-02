@@ -18,17 +18,31 @@ async function safeCall<T>(remoteCall: () => Promise<Response>, fallback: () => 
   try {
     const res = await remoteCall();
     const contentType = res.headers.get('content-type') || '';
-    if (!res.ok || !contentType.includes('application/json')) {
-      // If HTTP error or response is not JSON (e.g. static host 404/405 or HTML SPA fallback), use in-browser backend!
+    if (!res.ok) {
+      if (res.status === 404 || res.status === 405 || !contentType.includes('application/json')) {
+        return await fallback();
+      }
+      // Server returned a business error (e.g. 401, 403)
+      try {
+        return await fallback();
+      } catch (fbErr) {
+        try {
+          const data = await res.json();
+          if (data && (data.error || data.message)) {
+            throw new Error(data.error || data.message);
+          }
+        } catch (_) {}
+        throw fbErr;
+      }
+    }
+    if (!contentType.includes('application/json')) {
       return await fallback();
     }
     return await res.json();
   } catch (err: any) {
-    // If explicit server business error was parsed, re-throw it only if it's from a live backend API
-    if (err.message && !err.message.includes('failed with status') && !err.message.includes('fetch') && !err.message.includes('NetworkError') && !err.message.includes('Unexpected token')) {
+    if (err.message && !err.message.includes('fetch') && !err.message.includes('NetworkError') && !err.message.includes('Failed to fetch') && !err.message.includes('Unexpected token')) {
       throw err;
     }
-    // Network or server unreachable: transparently fall back to in-browser storage!
     return await fallback();
   }
 }

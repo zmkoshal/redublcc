@@ -456,11 +456,11 @@ class MockBackendService {
     }
 
     let lookupUser = rawUser;
-    if (lookupUser === 'harris' || lookupUser === 'harris.javaid@red.com.pk') {
+    if (['harris', 'harris.javaid', 'harris.javaid@red.com.pk'].includes(lookupUser)) {
       lookupUser = 'finance';
-    } else if (lookupUser === 'zahid' || lookupUser === 'zahid.mahmood@red.com.pk') {
+    } else if (['zahid', 'zahid.mahmood', 'zahid.mahmood@red.com.pk'].includes(lookupUser)) {
       lookupUser = 'itadmin';
-    } else if (lookupUser === 'fahad' || lookupUser === 'fahad.babur' || lookupUser === 'fahad.babur@red.com.pk') {
+    } else if (['fahad', 'fahad.babur', 'fahad.babur@red.com.pk', 'fahad babur', 'fahadbabur'].includes(lookupUser)) {
       lookupUser = 'babur';
     }
 
@@ -469,6 +469,7 @@ class MockBackendService {
            x.email.toLowerCase() === lookupUser ||
            x.username.toLowerCase() === rawUser ||
            x.email.toLowerCase() === rawUser ||
+           (lookupUser === 'babur' && (x.username.toLowerCase() === 'babur' || x.username.toLowerCase() === 'fahad')) ||
            (x.full_name && x.full_name.toLowerCase().includes(rawUser)) ||
            (rawUser === 'fahad' && x.username.toLowerCase() === 'babur')
     );
@@ -481,7 +482,7 @@ class MockBackendService {
         { id: 4, username: 'manager', email: 'management@red.com.pk', full_name: 'Executive Management', role: 'management_readonly' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
         { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique (Data Entry)', role: 'it_entry' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
         { id: 6, username: 'babur', email: 'fahad.babur@red.com.pk', full_name: 'Fahad Babur', role: 'super_admin' as const, is_active: true, created_at: '2026-10-01T00:00:00Z' }
-      ].find(cu => cu.username === lookupUser || cu.email === lookupUser || cu.username === rawUser || (rawUser === 'fahad' && cu.username === 'babur') || cu.full_name.toLowerCase().includes(rawUser));
+      ].find(cu => cu.username === lookupUser || cu.email === lookupUser || cu.username === rawUser || (lookupUser === 'babur' && cu.username === 'babur') || cu.full_name.toLowerCase().includes(rawUser));
 
       if (canonicalMatch) {
         this.db.users.push(canonicalMatch);
@@ -516,7 +517,7 @@ class MockBackendService {
       (u.email ? this.db.userPasswords?.[u.email.toLowerCase()] : undefined);
 
     const defaultPasswords: Record<string, string[]> = {
-      'superadmin': ['Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
+      'superadmin': ['Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@*@3', 'Admin@123'],
       'finance': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
       'harris': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
       'itadmin': ['It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
@@ -562,6 +563,18 @@ class MockBackendService {
         const u = this.db.users.find(x => x.id === id);
         if (u) return { user: u };
       }
+      // Decode JWT token payload if authenticated via Flask backend
+      try {
+        const parts = stored.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          const u = this.db.users.find(
+            x => x.id === payload.user_id || 
+                 x.username.toLowerCase() === (payload.username || '').toLowerCase()
+          );
+          if (u) return { user: u };
+        }
+      } catch {}
     }
     return { user: this.db.users[0] };
   }

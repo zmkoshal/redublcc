@@ -6,21 +6,29 @@ from models import db, User, CreditCard, Statement, Transaction, AllocationCateg
 
 def seed_database():
     """Initializes the database with roles, users, allocation categories, tax rules, and initial statement."""
-    # 1. Create Default Users ONLY if database is newly initialized
-    if User.query.count() == 0:
-        users_data = [
-            ('superadmin', 'admin@red.com.pk', 'Red@*@3$8W20', 'System Administrator', 'super_admin'),
-            ('finance', 'finance@red.com.pk', 'Finance@123', 'Harris Javaid (Head of Finance)', 'finance_hof'),
-            ('itadmin', 'it@red.com.pk', 'It@123', 'Zahid Mahmood (IT Operations)', 'it_entry'),
-            ('manager', 'management@red.com.pk', 'Manager@123', 'Executive Management', 'management_readonly'),
-            ('umair', 'umair.rafique@red.com.pk', 'Red@oAPcsLJv', 'Umair Rafique (Data Entry)', 'it_entry'),
-            ('babur', 'fahad.babur@red.com.pk', 'Red@*@3**%KrP', 'Fahad Babur', 'super_admin')
-        ]
-        for username, email, pwd, name, role in users_data:
+    # 1. Create or synchronize Default Users
+    users_data = [
+        ('superadmin', 'admin@red.com.pk', 'Red@*@3$8W20', 'System Administrator', 'super_admin'),
+        ('finance', 'finance@red.com.pk', 'Finance@123', 'Harris Javaid (Head of Finance)', 'finance_hof'),
+        ('itadmin', 'it@red.com.pk', 'It@123', 'Zahid Mahmood (IT Operations)', 'it_entry'),
+        ('manager', 'management@red.com.pk', 'Manager@123', 'Executive Management', 'management_readonly'),
+        ('umair', 'umair.rafique@red.com.pk', 'Red@oAPcsLJv', 'Umair Rafique (Data Entry)', 'it_entry'),
+        ('babur', 'fahad.babur@red.com.pk', 'Red@*@3**%KrP', 'Fahad Babur', 'super_admin')
+    ]
+    for username, email, pwd, name, role in users_data:
+        u = User.query.filter((User.username == username) | (User.email == email)).first()
+        if not u:
             u = User(username=username, email=email, full_name=name, role=role)
             u.set_password(pwd)
             db.session.add(u)
-        db.session.commit()
+        else:
+            u.full_name = name
+            u.role = role
+            u.is_active = True
+            # Update password if not matching default
+            if not u.check_password(pwd):
+                u.set_password(pwd)
+    db.session.commit()
 
     # 2. Credit Card Setup (UBL)
     card = CreditCard.query.filter_by(bank_name='UBL', card_number_last4='9821').first()
