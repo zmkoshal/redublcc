@@ -88,7 +88,7 @@ def seed_database():
 
 def seed_sample_statement():
     """Seeds the historical sample statement for testing purposes if requested."""
-    card = CreditCard.query.filter_by(bank_name='UBL').first()
+    return  # Permanently disabled UBL-CC-2026-09
     admin_user = User.query.filter_by(username='superadmin').first()
     cat_map = {c.code: c for c in AllocationCategory.query.all()}
 

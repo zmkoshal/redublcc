@@ -154,7 +154,7 @@ function getInitialData(): MockDatabase {
     created_at: `${t.dt}T12:00:00Z`
   }));
 
-  const transactions: Transaction[] = [...tx2, ...tx1];
+  const transactions: Transaction[] = [...tx2];
 
   const statements: Statement[] = [
     {
@@ -166,7 +166,7 @@ function getInitialData(): MockDatabase {
       payment_due_date: '2026-11-11',
       period_start_date: '2026-09-21',
       period_end_date: '2026-10-20',
-      opening_balance: 55774.00,
+      opening_balance: 0.00,
       total_statement_amount: 619801.15,
       amount_paid: 0.00,
       outstanding_balance: 619801.15,
@@ -176,26 +176,6 @@ function getInitialData(): MockDatabase {
       created_at: '2026-10-20T10:00:00Z',
       updated_at: '2026-10-20T10:00:00Z',
       transaction_count: tx2.length
-    },
-    {
-      id: 1,
-      card_id: 1,
-      credit_card: card,
-      statement_number: 'UBL-CC-2026-09',
-      statement_date: '2026-09-20',
-      payment_due_date: '2026-10-11',
-      period_start_date: '2026-08-21',
-      period_end_date: '2026-09-20',
-      opening_balance: 0,
-      total_statement_amount: 484047.70,
-      amount_paid: 428273.70,
-      outstanding_balance: 55774.00,
-      status: 'Partially Paid',
-      notes: 'Statement cycle ending 20-Sep-2026 (Historical statement).',
-      created_by: 'System Administrator',
-      created_at: '2026-09-20T10:00:00Z',
-      updated_at: '2026-09-20T10:00:00Z',
-      transaction_count: tx1.length
     }
   ];
 
@@ -210,41 +190,12 @@ function getInitialData(): MockDatabase {
     { id: 8, rule_name: 'SMS & Card Banking Fee', tax_type: 'BANK_CHARGES', calc_type: 'FIXED', default_rate: 250.0, is_active: true, rounding_method: 'EXACT', description: 'Bank periodic SMS notification fee' }
   ];
 
-  const payments: Payment[] = [
-    {
-      id: 1,
-      statement_id: 1,
-      payment_date: '2026-10-05',
-      payment_reference: 'FT-UBL-9821-001',
-      payment_method: 'Online Bank Transfer',
-      amount: 428273.70,
-      notes: 'Initial corporate clearing payment via UBL Netbanking.',
-      recorded_by: 'Head of Finance',
-      created_at: '2026-10-05T14:30:00Z'
-    }
-  ];
+  const payments: Payment[] = [];
 
-  const reconciliations: Record<number, ReconciliationRecord> = {
-    1: {
-      id: 1,
-      statement_id: 1,
-      status: 'Matched',
-      bank_total: 484047.70,
-      system_total: 484047.70,
-      difference: 0,
-      matched_count: transactions.length,
-      missing_count: 0,
-      discrepancy_count: 0,
-      notes: 'All 21 ledger items perfectly match UBL Bank Statement summary.',
-      reconciled_by: 'Head of Finance',
-      reconciled_at: '2026-10-06T11:00:00Z',
-      created_at: '2026-10-06T11:00:00Z'
-    }
-  };
+  const reconciliations: Record<number, ReconciliationRecord> = {};
 
   const auditLogs: AuditLog[] = [
-    { id: 1, user_name: 'System Administrator', action: 'CREATE', entity_type: 'Statement', entity_id: '1', notes: 'Initial statement UBL-CC-2026-09 imported from Excel workbook.', timestamp: '2026-09-20T10:00:00Z' },
-    { id: 2, user_name: 'Head of Finance', action: 'PAYMENT', entity_type: 'Payment', entity_id: '1', notes: 'Recorded payment of Rs. 428,273.70 reference FT-UBL-9821-001.', timestamp: '2026-10-05T14:30:00Z' }
+    { id: 1, user_name: 'System Administrator', action: 'CREATE', entity_type: 'Statement', entity_id: '2', notes: 'Statement UBL-CC-2026-10 loaded.', timestamp: '2026-10-20T10:00:00Z' }
   ];
 
   const settings: Record<string, string> = {
@@ -320,6 +271,37 @@ class MockBackendService {
       } catch (e) {
         console.warn('Could not parse db from localStorage', e);
       }
+    }
+
+    // Permanently remove UBL-CC-2026-09 and any statement id: 1
+    let dbChanged = false;
+    if (this.db && Array.isArray(this.db.statements)) {
+      const filteredS = this.db.statements.filter(s => s.statement_number !== 'UBL-CC-2026-09' && s.id !== 1);
+      if (filteredS.length !== this.db.statements.length) {
+        this.db.statements = filteredS;
+        dbChanged = true;
+      }
+    }
+    if (this.db && Array.isArray(this.db.transactions)) {
+      const filteredT = this.db.transactions.filter(t => t.statement_id !== 1);
+      if (filteredT.length !== this.db.transactions.length) {
+        this.db.transactions = filteredT;
+        dbChanged = true;
+      }
+    }
+    if (this.db && this.db.reconciliations && this.db.reconciliations[1]) {
+      delete this.db.reconciliations[1];
+      dbChanged = true;
+    }
+    if (this.db && Array.isArray(this.db.payments)) {
+      const filteredP = this.db.payments.filter(p => p.statement_id !== 1);
+      if (filteredP.length !== this.db.payments.length) {
+        this.db.payments = filteredP;
+        dbChanged = true;
+      }
+    }
+    if (dbChanged) {
+      this.save();
     }
 
     if (!this.db.userPasswords) {
