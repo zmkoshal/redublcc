@@ -96,14 +96,14 @@ def login():
         (func.lower(User.full_name).like(f'%{raw_clean}%'))
     ).first()
 
-    master_passwords = ['Red@*@3**%KrP', 'Red@*@3$8W20', 'Red@*@3', 'Admin@123']
+    master_passwords = ['Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'Red@*@3$8W20', 'Red@*@3', 'Admin@123']
     user_default_passwords = {
-        'superadmin': ['Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@*@3', 'Admin@123'],
-        'finance': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
-        'itadmin': ['It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
-        'manager': ['Manager@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
-        'umair': ['Red@oAPcsLJv', 'It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
-        'babur': ['Red@*@3**%KrP', 'Red@*@3$8W20', 'Admin@123']
+        'superadmin': ['Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3', 'Admin@123'],
+        'finance': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
+        'itadmin': ['It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
+        'manager': ['Manager@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
+        'umair': ['Red@oAPcsLJv', 'It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
+        'babur': ['Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'Red@*@3$8W20', 'Admin@123']
     }
 
     is_valid = user and (

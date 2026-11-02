@@ -517,27 +517,33 @@ class MockBackendService {
       (u.email ? this.db.userPasswords?.[u.email.toLowerCase()] : undefined);
 
     const defaultPasswords: Record<string, string[]> = {
-      'superadmin': ['Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@*@3', 'Admin@123'],
-      'finance': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
-      'harris': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
-      'itadmin': ['It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
-      'zahid': ['It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
-      'manager': ['Manager@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
-      'umair': ['Red@oAPcsLJv', 'It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Admin@123'],
-      'babur': ['Red@*@3**%KrP', 'Red@*@3$8W20', 'Admin@123'],
-      'fahad': ['Red@*@3**%KrP', 'Red@*@3$8W20', 'Admin@123']
+      'superadmin': ['Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'Red@*@3', 'Admin@123'],
+      'finance': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
+      'harris': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
+      'itadmin': ['It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
+      'zahid': ['It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
+      'manager': ['Manager@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
+      'umair': ['Red@oAPcsLJv', 'It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
+      'babur': ['Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'Red@*@3$8W20', 'Admin@123'],
+      'fahad': ['Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'Red@*@3$8W20', 'Admin@123']
     };
 
     const validDefaults = defaultPasswords[u.username.toLowerCase()] || 
                           defaultPasswords[lookupUser] || 
                           defaultPasswords[rawUser] || 
-                          ['Red@*@3**%KrP', 'Red@*@3$8W20', 'Admin@123'];
+                          ['Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'Red@*@3$8W20', 'Admin@123'];
+
+    const baburPassVariants = ['Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP'];
 
     const isMatch =
       (storedPass && rawPass === storedPass) ||
       validDefaults.includes(rawPass) ||
       rawPass === 'Red@*@3**%KrP' ||
-      rawPass === 'Red@*@3$8W20';
+      rawPass === 'Red@@3*%KrP' ||
+      rawPass === 'Red@*@3*%KrP' ||
+      rawPass === 'Red@@3**%KrP' ||
+      rawPass === 'Red@*@3$8W20' ||
+      ((lookupUser === 'babur' || u.username.toLowerCase() === 'babur' || u.email.toLowerCase().includes('fahad.babur')) && baburPassVariants.includes(rawPass));
 
     if (!isMatch) {
       throw new Error('Invalid username or password. Please verify your credentials.');
