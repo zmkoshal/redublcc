@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Modal } from '../components/common/Modal';
+import logoImg from '../assets/logo.png';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -70,7 +71,14 @@ export const LoginPage: React.FC = () => {
           {/* Logo Showcase (Transparent - No white background) */}
           <div className="inline-block transition-transform duration-300 hover:scale-[1.02]">
             <img
-              src="/logo.png"
+              src={logoImg}
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.dataset.retried) {
+                  target.dataset.retried = 'true';
+                  target.src = './logo.png';
+                }
+              }}
               alt="Red Publicis Logo"
               className="h-16 sm:h-20 w-auto object-contain max-w-full drop-shadow-[0_2px_12px_rgba(255,255,255,0.18)]"
             />

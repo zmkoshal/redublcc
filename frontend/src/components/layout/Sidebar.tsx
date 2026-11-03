@@ -23,6 +23,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { api } from '../../services/api';
+import logoImg from '../../assets/logo.png';
 
 interface SidebarProps {
   currentView: string;
@@ -99,7 +100,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView, isO
       <div className="p-4 border-b border-slate-800 flex flex-col space-y-2">
         <div className="py-1 flex items-center justify-center">
           <img
-            src="/logo.png"
+            src={logoImg}
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (!target.dataset.retried) {
+                target.dataset.retried = 'true';
+                target.src = './logo.png';
+              }
+            }}
             alt="Red Publicis"
             className="h-9 w-auto object-contain max-w-full drop-shadow-[0_1px_6px_rgba(255,255,255,0.18)]"
           />

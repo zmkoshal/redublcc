@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import logoImg from '../assets/logo.png';
 import {
   User,
   CreditCard,
@@ -1453,7 +1454,7 @@ class MockBackendService {
 
       // Try embedding logo in top right (Column H/I)
       try {
-        const logoRes = await fetch('/logo.png');
+        const logoRes = await fetch(logoImg).catch(() => fetch('./logo.png'));
         if (logoRes.ok) {
           const buffer = await logoRes.arrayBuffer();
           const imageId = wb.addImage({
@@ -2230,7 +2231,7 @@ class MockBackendService {
       <div class="subtitle-stmt"><b>UBL Credit Card Statement:</b> ${stmtNum} | <b>Statement Date:</b> ${stmtDate} | <b>Due Date:</b> ${dueDate}</div>
     </div>
     <div>
-      <img src="/logo.png" class="logo-img" alt="RED publicis" onerror="this.style.display='none'" />
+      <img src="${logoImg}" class="logo-img" alt="RED publicis" onerror="this.src='./logo.png'; this.onerror=function(){this.style.display='none';}" />
     </div>
   </div>
 
@@ -2565,7 +2566,7 @@ class MockBackendService {
       <div class="title-company">RED PUBLICIS (COMMUNICATION ARTS)</div>
       <div class="subtitle-report"><b>Report:</b> ${reportType.replace(/_/g, ' ').toUpperCase()} &nbsp;|&nbsp; <b>Generated:</b> ${new Date().toLocaleString()}</div>
     </div>
-    <img src="/logo.png" class="logo-img" alt="Logo" onerror="this.style.display='none'" />
+    <img src="${logoImg}" class="logo-img" alt="Logo" onerror="this.src='./logo.png'; this.onerror=function(){this.style.display='none';}" />
   </div>
   <table>
     <thead>
