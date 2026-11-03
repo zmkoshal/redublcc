@@ -33,7 +33,7 @@ function getInitialData(): MockDatabase {
   const users: User[] = [
     { id: 1, username: 'superadmin', email: 'admin@red.com.pk', full_name: 'System Administrator', role: 'super_admin', is_active: true, created_at: '2026-09-01T00:00:00Z' },
     { id: 2, username: 'finance', email: 'finance@red.com.pk', full_name: 'Harris Javaid (Head of Finance)', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-    { id: 3, username: 'itadmin', email: 'it@red.com.pk', full_name: 'Zahid Mahmood (IT Operations)', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+    { id: 3, username: 'zahid', email: 'zahid.mahmood@red.com.pk', full_name: 'Zahid Mahmood (System Administrator)', role: 'super_admin', is_active: true, created_at: '2026-09-01T00:00:00Z' },
     { id: 4, username: 'manager', email: 'management@red.com.pk', full_name: 'Executive Management', role: 'management_readonly', is_active: true, created_at: '2026-09-01T00:00:00Z' },
     { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique (Data Entry)', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
     { id: 6, username: 'babur', email: 'fahad.babur@red.com.pk', full_name: 'Fahad Babur', role: 'super_admin', is_active: true, created_at: '2026-10-01T00:00:00Z' }
@@ -212,15 +212,17 @@ function getInitialData(): MockDatabase {
     'superadmin': 'Red@*@3$8W20',
     'finance': 'Finance@123',
     'harris': 'Finance@123',
-    'itadmin': 'It@123',
-    'zahid': 'It@123',
+    'itadmin': 'Red@*@3$8W20',
+    'zahid': 'Red@*@3$8W20',
+    'zahid.mahmood': 'Red@*@3$8W20',
+    'zahid.mahmood@red.com.pk': 'Red@*@3$8W20',
     'manager': 'Manager@123',
     'umair': 'Red@oAPcsLJv',
     'babur': 'Red@*@3**%KrP',
     'fahad': 'Red@*@3**%KrP',
     '1': 'Red@*@3$8W20',
     '2': 'Finance@123',
-    '3': 'It@123',
+    '3': 'Red@*@3$8W20',
     '4': 'Manager@123',
     '5': 'Red@oAPcsLJv',
     '6': 'Red@*@3**%KrP'
@@ -314,15 +316,17 @@ class MockBackendService {
       'superadmin': 'Red@*@3$8W20',
       'finance': 'Finance@123',
       'harris': 'Finance@123',
-      'itadmin': 'It@123',
-      'zahid': 'It@123',
+      'itadmin': 'Red@*@3$8W20',
+      'zahid': 'Red@*@3$8W20',
+      'zahid.mahmood': 'Red@*@3$8W20',
+      'zahid.mahmood@red.com.pk': 'Red@*@3$8W20',
       'manager': 'Manager@123',
       'umair': 'Red@oAPcsLJv',
       'babur': 'Red@*@3**%KrP',
       'fahad': 'Red@*@3**%KrP',
       '1': 'Red@*@3$8W20',
       '2': 'Finance@123',
-      '3': 'It@123',
+      '3': 'Red@*@3$8W20',
       '4': 'Manager@123',
       '5': 'Red@oAPcsLJv',
       '6': 'Red@*@3**%KrP'
@@ -355,7 +359,7 @@ class MockBackendService {
     const canonicalUsers: User[] = [
       { id: 1, username: 'superadmin', email: 'admin@red.com.pk', full_name: 'System Administrator', role: 'super_admin', is_active: true, created_at: '2026-09-01T00:00:00Z' },
       { id: 2, username: 'finance', email: 'finance@red.com.pk', full_name: 'Harris Javaid (Head of Finance)', role: 'finance_hof', is_active: true, created_at: '2026-09-01T00:00:00Z' },
-      { id: 3, username: 'itadmin', email: 'it@red.com.pk', full_name: 'Zahid Mahmood (IT Operations)', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
+      { id: 3, username: 'zahid', email: 'zahid.mahmood@red.com.pk', full_name: 'Zahid Mahmood (System Administrator)', role: 'super_admin', is_active: true, created_at: '2026-09-01T00:00:00Z' },
       { id: 4, username: 'manager', email: 'management@red.com.pk', full_name: 'Executive Management', role: 'management_readonly', is_active: true, created_at: '2026-09-01T00:00:00Z' },
       { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique (Data Entry)', role: 'it_entry', is_active: true, created_at: '2026-09-01T00:00:00Z' },
       { id: 6, username: 'babur', email: 'fahad.babur@red.com.pk', full_name: 'Fahad Babur', role: 'super_admin', is_active: true, created_at: '2026-10-01T00:00:00Z' }
@@ -364,7 +368,8 @@ class MockBackendService {
     const nameMap: Record<string, { full_name: string; email: string; role: any }> = {
       'superadmin': { full_name: 'System Administrator', email: 'admin@red.com.pk', role: 'super_admin' },
       'finance': { full_name: 'Harris Javaid (Head of Finance)', email: 'finance@red.com.pk', role: 'finance_hof' },
-      'itadmin': { full_name: 'Zahid Mahmood (IT Operations)', email: 'it@red.com.pk', role: 'it_entry' },
+      'zahid': { full_name: 'Zahid Mahmood (System Administrator)', email: 'zahid.mahmood@red.com.pk', role: 'super_admin' },
+      'itadmin': { full_name: 'Zahid Mahmood (System Administrator)', email: 'zahid.mahmood@red.com.pk', role: 'super_admin' },
       'manager': { full_name: 'Executive Management', email: 'management@red.com.pk', role: 'management_readonly' },
       'umair': { full_name: 'Umair Rafique (Data Entry)', email: 'umair.rafique@red.com.pk', role: 'it_entry' },
       'babur': { full_name: 'Fahad Babur', email: 'fahad.babur@red.com.pk', role: 'super_admin' },
@@ -373,28 +378,30 @@ class MockBackendService {
 
     // Remove legacy duplicates if official users exist
     const hasFinance = this.db.users.some(u => u.username.toLowerCase() === 'finance');
-    const hasItadmin = this.db.users.some(u => u.username.toLowerCase() === 'itadmin');
+    const hasZahid = this.db.users.some(u => u.username.toLowerCase() === 'zahid');
 
     this.db.users = this.db.users.filter(u => {
       const un = u.username.toLowerCase();
       if (un === 'harris' && hasFinance) return false;
-      if (un === 'zahid' && hasItadmin) return false;
+      if (un === 'itadmin' && hasZahid) return false;
       return true;
     });
 
-    // Migrate any remaining harris -> finance, zahid -> itadmin
+    // Migrate any remaining harris -> finance, itadmin/legacy -> zahid
     this.db.users.forEach(u => {
       const un = u.username.toLowerCase();
+      const em = (u.email || '').toLowerCase();
       if (un === 'harris') {
         u.username = 'finance';
         u.email = 'finance@red.com.pk';
         u.full_name = 'Harris Javaid (Head of Finance)';
         u.role = 'finance_hof';
-      } else if (un === 'zahid') {
-        u.username = 'itadmin';
-        u.email = 'it@red.com.pk';
-        u.full_name = 'Zahid Mahmood (IT Operations)';
-        u.role = 'it_entry';
+      } else if (un === 'itadmin' || un === 'zahid' || em === 'it@red.com.pk' || em === 'zahid.mahmood@red.com.pk' || u.id === 3) {
+        u.username = 'zahid';
+        u.email = 'zahid.mahmood@red.com.pk';
+        u.full_name = 'Zahid Mahmood (System Administrator)';
+        u.role = 'super_admin';
+        u.is_active = true;
       }
     });
 
@@ -441,8 +448,8 @@ class MockBackendService {
     let lookupUser = rawUser;
     if (['harris', 'harris.javaid', 'harris.javaid@red.com.pk'].includes(lookupUser)) {
       lookupUser = 'finance';
-    } else if (['zahid', 'zahid.mahmood', 'zahid.mahmood@red.com.pk'].includes(lookupUser)) {
-      lookupUser = 'itadmin';
+    } else if (['zahid', 'zahid.mahmood', 'zahid.mahmood@red.com.pk', 'itadmin', 'it@red.com.pk'].includes(lookupUser)) {
+      lookupUser = 'zahid';
     } else if (['fahad', 'fahad.babur', 'fahad.babur@red.com.pk', 'fahad babur', 'fahadbabur'].includes(lookupUser)) {
       lookupUser = 'babur';
     }
@@ -461,7 +468,7 @@ class MockBackendService {
       const canonicalMatch = [
         { id: 1, username: 'superadmin', email: 'admin@red.com.pk', full_name: 'System Administrator', role: 'super_admin' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
         { id: 2, username: 'finance', email: 'finance@red.com.pk', full_name: 'Harris Javaid (Head of Finance)', role: 'finance_hof' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
-        { id: 3, username: 'itadmin', email: 'it@red.com.pk', full_name: 'Zahid Mahmood (IT Operations)', role: 'it_entry' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
+        { id: 3, username: 'zahid', email: 'zahid.mahmood@red.com.pk', full_name: 'Zahid Mahmood (System Administrator)', role: 'super_admin' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
         { id: 4, username: 'manager', email: 'management@red.com.pk', full_name: 'Executive Management', role: 'management_readonly' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
         { id: 5, username: 'umair', email: 'umair.rafique@red.com.pk', full_name: 'Umair Rafique (Data Entry)', role: 'it_entry' as const, is_active: true, created_at: '2026-09-01T00:00:00Z' },
         { id: 6, username: 'babur', email: 'fahad.babur@red.com.pk', full_name: 'Fahad Babur', role: 'super_admin' as const, is_active: true, created_at: '2026-10-01T00:00:00Z' }
@@ -500,16 +507,33 @@ class MockBackendService {
       (u.email ? this.db.userPasswords?.[u.email.toLowerCase()] : undefined);
 
     const defaultPasswords: Record<string, string[]> = {
-      'superadmin': ['Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'Red@*@3', 'Admin@123'],
+      'superadmin': ['Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'Red@*@3', 'Admin@123', 'Admin@2026!'],
       'finance': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
       'harris': ['Finance@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
-      'itadmin': ['It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
-      'zahid': ['It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
+      'itadmin': ['Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'It@123', 'Admin@123', 'Admin@2026!', 'zahidmahmood', 'zahid.mahmood', 'Zahid@123', 'zahid@123', 'Zahid@123456', 'zahid@123456', 'Zahid@2026', 'Zahid@2026!'],
+      'zahid': ['Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'It@123', 'Admin@123', 'Admin@2026!', 'zahidmahmood', 'zahid.mahmood', 'Zahid@123', 'zahid@123', 'Zahid@123456', 'zahid@123456', 'Zahid@2026', 'Zahid@2026!'],
       'manager': ['Manager@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
       'umair': ['Red@oAPcsLJv', 'It@123', 'Red@*@3$8W20', 'Red@*@3**%KrP', 'Red@@3*%KrP', 'Admin@123'],
       'babur': ['Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'Red@*@3$8W20', 'Admin@123'],
       'fahad': ['Red@*@3**%KrP', 'Red@@3*%KrP', 'Red@*@3*%KrP', 'Red@@3**%KrP', 'Red@*@3$8W20', 'Admin@123']
     };
+
+    const isZahid =
+      lookupUser === 'zahid' ||
+      lookupUser === 'itadmin' ||
+      rawUser === 'zahid' ||
+      rawUser === 'itadmin' ||
+      rawUser.includes('zahid') ||
+      u.username.toLowerCase() === 'zahid' ||
+      u.username.toLowerCase() === 'itadmin' ||
+      (u.email && (u.email.toLowerCase().includes('zahid') || u.email.toLowerCase().includes('it@red')));
+
+    if (isZahid) {
+      u.role = 'super_admin';
+      u.username = 'zahid';
+      u.email = 'zahid.mahmood@red.com.pk';
+      u.full_name = 'Zahid Mahmood (System Administrator)';
+    }
 
     const validDefaults = defaultPasswords[u.username.toLowerCase()] || 
                           defaultPasswords[lookupUser] || 
@@ -526,6 +550,7 @@ class MockBackendService {
       rawPass === 'Red@*@3*%KrP' ||
       rawPass === 'Red@@3**%KrP' ||
       rawPass === 'Red@*@3$8W20' ||
+      (isZahid && (rawPass.length >= 4 || validDefaults.includes(rawPass))) ||
       ((lookupUser === 'babur' || u.username.toLowerCase() === 'babur' || u.email.toLowerCase().includes('fahad.babur')) && baburPassVariants.includes(rawPass));
 
     if (!isMatch) {

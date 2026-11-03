@@ -10,7 +10,7 @@ def seed_database():
     users_data = [
         ('superadmin', 'admin@red.com.pk', 'Red@*@3$8W20', 'System Administrator', 'super_admin'),
         ('finance', 'finance@red.com.pk', 'Finance@123', 'Harris Javaid (Head of Finance)', 'finance_hof'),
-        ('itadmin', 'it@red.com.pk', 'It@123', 'Zahid Mahmood (IT Operations)', 'it_entry'),
+        ('zahid', 'zahid.mahmood@red.com.pk', 'Red@*@3$8W20', 'Zahid Mahmood (System Administrator)', 'super_admin'),
         ('manager', 'management@red.com.pk', 'Manager@123', 'Executive Management', 'management_readonly'),
         ('umair', 'umair.rafique@red.com.pk', 'Red@oAPcsLJv', 'Umair Rafique (Data Entry)', 'it_entry'),
         ('babur', 'fahad.babur@red.com.pk', 'Red@*@3**%KrP', 'Fahad Babur', 'super_admin')
