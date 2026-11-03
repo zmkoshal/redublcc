@@ -134,7 +134,7 @@ export const App: React.FC = () => {
                 onSelectStatementDetail={handleSelectStatementDetail}
               />
             )}
-            {currentView === 'statement_detail' && activeDetailStatementId && (
+            {currentView === 'statement_detail' && activeDetailStatementId != null && (
               <StatementDetailView
                 statementId={activeDetailStatementId}
                 onBack={() => setCurrentView('statements')}

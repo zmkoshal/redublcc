@@ -408,7 +408,7 @@ export const StatementDetailView: React.FC<StatementDetailViewProps> = ({
     })}`;
   };
 
-  if (loading || !groupedData) {
+  if (loading) {
     return (
       <div className="py-24 text-center">
         <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -417,7 +417,33 @@ export const StatementDetailView: React.FC<StatementDetailViewProps> = ({
     );
   }
 
-  const { statement, groups, grand_total } = groupedData;
+  if (!groupedData || !groupedData.statement) {
+    return (
+      <div className="py-24 text-center space-y-4">
+        <AlertCircle className="w-12 h-12 text-amber-500 mx-auto" />
+        <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">Statement Not Found</h3>
+        <p className="text-xs text-slate-500">The requested statement could not be loaded or was removed.</p>
+        <button
+          onClick={onBack}
+          className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors"
+        >
+          Back to Statements
+        </button>
+      </div>
+    );
+  }
+
+  const statement = groupedData.statement;
+  const groups: any[] = groupedData.groups || [];
+  const grand_total = groupedData.grand_total || {
+    pkr_amount: 0,
+    advance_tax: 0,
+    sales_tax_withheld: 0,
+    other_charges: 0,
+    total_amount: statement.total_statement_amount || 0,
+    amount_paid: statement.amount_paid || 0,
+    outstanding_balance: statement.outstanding_balance || 0
+  };
 
   return (
     <div className="space-y-6">
@@ -525,91 +551,107 @@ export const StatementDetailView: React.FC<StatementDetailViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
-              {groups.map((group: any, gIndex: number) => {
-                const cat = group.category;
-                const sub = group.subtotal;
-                return (
-                  <React.Fragment key={cat.id || gIndex}>
-                    {/* Allocation Group Header */}
-                    <tr className="bg-blue-50/70 dark:bg-blue-950/40 border-t-2 border-blue-200 dark:border-blue-900">
-                      <td colSpan={9} className="py-2.5 px-4">
-                        <div className="flex items-center space-x-2">
-                          <Building className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-                          <span className="font-extrabold text-blue-900 dark:text-blue-200 uppercase tracking-wide text-xs">
-                            {cat.name}
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-semibold">
-                            {group.transactions.length} items
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-
-                    {/* Group Transactions */}
-                    {group.transactions.map((t: any, tIndex: number) => (
-                      <tr
-                        key={t.id}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
-                      >
-                        <td className="py-2.5 px-4 text-center text-slate-400 font-mono text-[11px]">
-                          {tIndex + 1}
-                        </td>
-                        <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
-                          <div>
-                            <span>{t.merchant_name}</span>
-                            {t.description && t.description !== t.merchant_name && (
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-normal mt-0.5">
-                                {t.description}
-                              </p>
-                            )}
+              {groups.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
+                    <p className="text-sm font-semibold">No transactions recorded for this statement cycle yet.</p>
+                    <p className="text-xs text-slate-500 mt-1">Use "+ Add Entry (Auto Formula)" or "Import Statement File" above to add transactions.</p>
+                  </td>
+                </tr>
+              ) : (
+                groups.map((group: any, gIndex: number) => {
+                  const cat = group.category || { id: gIndex, name: 'General', code: 'GENERAL' };
+                  const sub = group.subtotal || {
+                    pkr_amount: group.subtotal_pkr || 0,
+                    advance_tax: group.subtotal_advance_tax || 0,
+                    sales_tax_withheld: group.subtotal_sales_tax || 0,
+                    other_charges: 0,
+                    total_amount: group.subtotal_total || 0
+                  };
+                  const transactions = group.transactions || [];
+                  return (
+                    <React.Fragment key={cat.id || gIndex}>
+                      {/* Allocation Group Header */}
+                      <tr className="bg-blue-50/70 dark:bg-blue-950/40 border-t-2 border-blue-200 dark:border-blue-900">
+                        <td colSpan={9} className="py-2.5 px-4">
+                          <div className="flex items-center space-x-2">
+                            <Building className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                            <span className="font-extrabold text-blue-900 dark:text-blue-200 uppercase tracking-wide text-xs">
+                              {cat.name}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-semibold">
+                              {transactions.length} items
+                            </span>
                           </div>
                         </td>
-                        <td className="py-2.5 px-4 text-right text-slate-600 dark:text-slate-300 tabular-nums">
-                          {formatUSD(t.usd_amount)}
+                      </tr>
+
+                      {/* Group Transactions */}
+                      {transactions.map((t: any, tIndex: number) => (
+                        <tr
+                          key={t.id}
+                          className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                        >
+                          <td className="py-2.5 px-4 text-center text-slate-400 font-mono text-[11px]">
+                            {tIndex + 1}
+                          </td>
+                          <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
+                            <div>
+                              <span>{t.merchant_name}</span>
+                              {t.description && t.description !== t.merchant_name && (
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-normal mt-0.5">
+                                  {t.description}
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-4 text-right text-slate-600 dark:text-slate-300 tabular-nums">
+                            {formatUSD(t.usd_amount)}
+                          </td>
+                          <td className="py-2.5 px-4 text-right text-slate-600 dark:text-slate-300 tabular-nums font-mono text-[11px]">
+                            {t.exchange_rate ? Number(t.exchange_rate).toFixed(2) : '-'}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-medium text-slate-800 dark:text-slate-200 tabular-nums">
+                            {formatPKR(t.pkr_amount)}
+                          </td>
+                          <td className="py-2.5 px-4 text-right text-purple-700 dark:text-purple-300 tabular-nums">
+                            {formatPKR(t.advance_tax)}
+                          </td>
+                          <td className="py-2.5 px-4 text-right text-teal-700 dark:text-teal-300 tabular-nums">
+                            {formatPKR(t.sales_tax_withheld)}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-bold text-slate-900 dark:text-white tabular-nums">
+                            {formatPKR(t.total_amount)}
+                          </td>
+                          <td className="py-2.5 px-4 text-center">
+                            <Badge status={t.approval_status} />
+                          </td>
+                        </tr>
+                      ))}
+
+                      {/* Group Subtotal Row */}
+                      <tr className="bg-slate-100/80 dark:bg-slate-800/80 font-bold border-b-2 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200">
+                        <td colSpan={4} className="py-2.5 px-4 text-right uppercase text-[11px] text-slate-600 dark:text-slate-400">
+                          SUBTOTAL ({cat.code || cat.name}):
                         </td>
-                        <td className="py-2.5 px-4 text-right text-slate-600 dark:text-slate-300 tabular-nums font-mono text-[11px]">
-                          {t.exchange_rate ? Number(t.exchange_rate).toFixed(2) : '-'}
-                        </td>
-                        <td className="py-2.5 px-4 text-right font-medium text-slate-800 dark:text-slate-200 tabular-nums">
-                          {formatPKR(t.pkr_amount)}
+                        <td className="py-2.5 px-4 text-right tabular-nums">
+                          {formatPKR(sub.pkr_amount || 0)}
                         </td>
                         <td className="py-2.5 px-4 text-right text-purple-700 dark:text-purple-300 tabular-nums">
-                          {formatPKR(t.advance_tax)}
+                          {formatPKR(sub.advance_tax || 0)}
                         </td>
                         <td className="py-2.5 px-4 text-right text-teal-700 dark:text-teal-300 tabular-nums">
-                          {formatPKR(t.sales_tax_withheld)}
+                          {formatPKR(sub.sales_tax_withheld || 0)}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-bold text-slate-900 dark:text-white tabular-nums">
-                          {formatPKR(t.total_amount)}
+                        <td className="py-2.5 px-4 text-right font-extrabold text-blue-700 dark:text-blue-400 tabular-nums text-sm">
+                          {formatPKR(sub.total_amount || 0)}
                         </td>
-                        <td className="py-2.5 px-4 text-center">
-                          <Badge status={t.approval_status} />
-                        </td>
+                        <td></td>
                       </tr>
-                    ))}
-
-                    {/* Group Subtotal Row */}
-                    <tr className="bg-slate-100/80 dark:bg-slate-800/80 font-bold border-b-2 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200">
-                      <td colSpan={4} className="py-2.5 px-4 text-right uppercase text-[11px] text-slate-600 dark:text-slate-400">
-                        SUBTOTAL ({cat.code || cat.name}):
-                      </td>
-                      <td className="py-2.5 px-4 text-right tabular-nums">
-                        {formatPKR(sub.pkr_amount)}
-                      </td>
-                      <td className="py-2.5 px-4 text-right text-purple-700 dark:text-purple-300 tabular-nums">
-                        {formatPKR(sub.advance_tax)}
-                      </td>
-                      <td className="py-2.5 px-4 text-right text-teal-700 dark:text-teal-300 tabular-nums">
-                        {formatPKR(sub.sales_tax_withheld)}
-                      </td>
-                      <td className="py-2.5 px-4 text-right font-extrabold text-blue-700 dark:text-blue-400 tabular-nums text-sm">
-                        {formatPKR(sub.total_amount)}
-                      </td>
-                      <td></td>
-                    </tr>
-                  </React.Fragment>
-                );
-              })}
+                    </React.Fragment>
+                  );
+                })
+              )}
 
               {/* Grand Total Row */}
               <tr className="bg-blue-100 dark:bg-blue-950 font-black text-slate-900 dark:text-white border-t-2 border-b-2 border-blue-400 text-sm">
@@ -617,16 +659,16 @@ export const StatementDetailView: React.FC<StatementDetailViewProps> = ({
                   GRAND TOTAL:
                 </td>
                 <td className="py-3.5 px-4 text-right tabular-nums">
-                  {formatPKR(grand_total.pkr_amount)}
+                  {formatPKR(grand_total.pkr_amount || 0)}
                 </td>
                 <td className="py-3.5 px-4 text-right text-purple-800 dark:text-purple-300 tabular-nums">
-                  {formatPKR(grand_total.advance_tax)}
+                  {formatPKR(grand_total.advance_tax || 0)}
                 </td>
                 <td className="py-3.5 px-4 text-right text-teal-800 dark:text-teal-300 tabular-nums">
-                  {formatPKR(grand_total.sales_tax_withheld)}
+                  {formatPKR(grand_total.sales_tax_withheld || 0)}
                 </td>
                 <td className="py-3.5 px-4 text-right font-black text-blue-900 dark:text-blue-300 tabular-nums text-base">
-                  {formatPKR(grand_total.total_amount)}
+                  {formatPKR(grand_total.total_amount || 0)}
                 </td>
                 <td></td>
               </tr>
@@ -637,7 +679,7 @@ export const StatementDetailView: React.FC<StatementDetailViewProps> = ({
                   AMOUNT PAID:
                 </td>
                 <td className="py-2.5 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                  -{formatPKR(grand_total.amount_paid)}
+                  -{formatPKR(grand_total.amount_paid || 0)}
                 </td>
                 <td></td>
               </tr>
@@ -648,7 +690,7 @@ export const StatementDetailView: React.FC<StatementDetailViewProps> = ({
                   OUTSTANDING BALANCE:
                 </td>
                 <td className="py-3 px-4 text-right font-black tabular-nums text-base">
-                  {formatPKR(grand_total.outstanding_balance)}
+                  {formatPKR(grand_total.outstanding_balance || 0)}
                 </td>
                 <td></td>
               </tr>
@@ -677,7 +719,7 @@ export const StatementDetailView: React.FC<StatementDetailViewProps> = ({
       </div>
 
       {/* SUMMARY SECTION (Replicating Rows 84-90 of the workbook) */}
-      {summaryData && (
+      {summaryData && Array.isArray(summaryData.summary_rows) && summaryData.summary_rows.length > 0 && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
           <div className="bg-[#2F5597] text-white px-5 py-3 flex items-center justify-between">
             <h4 className="text-xs font-extrabold uppercase tracking-wider">
@@ -716,7 +758,7 @@ export const StatementDetailView: React.FC<StatementDetailViewProps> = ({
                       G.TOTAL:
                     </td>
                     <td className="py-3 px-4 text-right tabular-nums text-blue-600 dark:text-blue-400 font-black text-sm">
-                      {formatPKR(summaryData.grand_total)}
+                      {formatPKR(summaryData.grand_total || 0)}
                     </td>
                   </tr>
                 </tbody>

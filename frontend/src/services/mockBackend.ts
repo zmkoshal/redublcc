@@ -848,9 +848,16 @@ class MockBackendService {
   }
 
   async getStatementGrouped(id: number): Promise<any> {
+    const stmt = await this.getStatement(id);
     const txs = this.db.transactions.filter(t => t.statement_id === id);
     const catMap = Object.fromEntries(this.db.categories.map(c => [c.id, c]));
     const groups: Record<string, any> = {};
+
+    let grandPkr = 0;
+    let grandAdvTax = 0;
+    let grandSalesTax = 0;
+    let grandOther = 0;
+    let grandTotal = 0;
 
     for (const t of txs) {
       const cat = catMap[t.allocation_id || 1] || this.db.categories[0];
@@ -858,6 +865,13 @@ class MockBackendService {
         groups[cat.code] = {
           category: cat,
           transactions: [],
+          subtotal: {
+            pkr_amount: 0,
+            advance_tax: 0,
+            sales_tax_withheld: 0,
+            other_charges: 0,
+            total_amount: 0
+          },
           subtotal_pkr: 0,
           subtotal_advance_tax: 0,
           subtotal_sales_tax: 0,
@@ -865,20 +879,77 @@ class MockBackendService {
         };
       }
       groups[cat.code].transactions.push(t);
-      groups[cat.code].subtotal_pkr += t.pkr_amount || 0;
-      groups[cat.code].subtotal_advance_tax += t.advance_tax || 0;
-      groups[cat.code].subtotal_sales_tax += t.sales_tax_withheld || 0;
-      groups[cat.code].subtotal_total += t.total_amount || 0;
+      const pkr = Number(t.pkr_amount || 0);
+      const adv = Number(t.advance_tax || 0);
+      const st = Number(t.sales_tax_withheld || 0);
+      const oth = Number((t.additional_sales_tax || 0) + (t.fed_amount || 0) + (t.bank_charges || 0) + (t.other_taxes || 0));
+      const tot = Number(t.total_amount || 0);
+
+      groups[cat.code].subtotal.pkr_amount += pkr;
+      groups[cat.code].subtotal.advance_tax += adv;
+      groups[cat.code].subtotal.sales_tax_withheld += st;
+      groups[cat.code].subtotal.other_charges += oth;
+      groups[cat.code].subtotal.total_amount += tot;
+
+      groups[cat.code].subtotal_pkr += pkr;
+      groups[cat.code].subtotal_advance_tax += adv;
+      groups[cat.code].subtotal_sales_tax += st;
+      groups[cat.code].subtotal_total += tot;
+
+      grandPkr += pkr;
+      grandAdvTax += adv;
+      grandSalesTax += st;
+      grandOther += oth;
+      grandTotal += tot;
     }
 
+    const amountPaid = Number(stmt?.amount_paid || 0);
+
     return {
-      statement: await this.getStatement(id),
-      groups: Object.values(groups)
+      statement: stmt,
+      groups: Object.values(groups),
+      grand_total: {
+        pkr_amount: grandPkr,
+        advance_tax: grandAdvTax,
+        sales_tax_withheld: grandSalesTax,
+        other_charges: grandOther,
+        total_amount: grandTotal,
+        amount_paid: amountPaid,
+        outstanding_balance: Math.max(0, grandTotal - amountPaid)
+      }
     };
   }
 
   async getStatementSummary(id: number): Promise<any> {
-    return this.getStatementGrouped(id);
+    const stmt = await this.getStatement(id);
+    const txs = this.db.transactions.filter(t => t.statement_id === id);
+    const categories = this.db.categories.slice().sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+
+    let runningTotal = 0;
+    const summaryRows = categories.map(cat => {
+      const catTxns = txs.filter(t => t.allocation_id === cat.id);
+      const catAmount = catTxns.reduce((sum, t) => sum + Number(t.total_amount || 0), 0);
+      runningTotal += catAmount;
+      return {
+        category_id: cat.id,
+        code: cat.code,
+        name: cat.name,
+        entity_type: cat.entity_type,
+        transaction_count: catTxns.length,
+        amount: catAmount
+      };
+    });
+
+    const amountPaid = Number(stmt?.amount_paid || 0);
+
+    return {
+      statement_id: stmt?.id || id,
+      statement_number: stmt?.statement_number || '',
+      summary_rows: summaryRows,
+      grand_total: runningTotal,
+      amount_paid: amountPaid,
+      remaining_balance: Math.max(0, runningTotal - amountPaid)
+    };
   }
 
   // --- Transactions ---
